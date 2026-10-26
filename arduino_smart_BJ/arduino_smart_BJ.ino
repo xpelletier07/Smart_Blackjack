@@ -1,13 +1,20 @@
 #include <LiquidCrystal.h>
-//Déclaration des pins du LCD
 LiquidCrystal lcd(2,3,4,5,6,7);
+
 int buttonHitStand = 12;
 int buttonDoubleSplit = 13;
 int greenLed = 8;
 int blueLed = 9;
 int redLed = 10;
-long hitStandPressTime;
-long doubleSplitPressTime;
+
+int dureeLongPress = 500;
+int dureeShortPress = 50;
+int dureeDelay = 2000;
+
+long hitStandPressTime = 0;
+long doubleSplitPressTime = 0;
+int hitStandPrev = LOW;      // au repos = LOW
+int doubleSplitPrev = LOW;
 
 void setup() {
   Serial.begin(9600);
@@ -32,51 +39,56 @@ void loop() {
   int hitStandState = digitalRead(buttonHitStand);
   int doubleSplitState = digitalRead(buttonDoubleSplit);
 
-  if (hitStandState == LOW) {
-    hitStandPressTime = millis(); 
+  // Bouton Hit/Stand
+  if (hitStandState == HIGH && hitStandPrev == LOW) {
+    hitStandPressTime = millis();                // on vient d'appuyer
   }
-  if (millis() - hitStandPressTime > 1000) { 
-    digitalWrite(redLed, HIGH);
-    lcd.setCursor(0, 1);
-    lcd.print("Stand");
-    delay(2000);
-    reset();
-
-  } else if (millis() - hitStandPressTime > 5) {
-    digitalWrite(greenLed, HIGH);
-    lcd.setCursor(0, 1);
-    lcd.print("Hit");
-    delay(2000);
-    reset();
-  } 
-
-  if (doubleSplitState == LOW) {
-    doubleSplitPressTime = millis(); 
+  if (hitStandState == LOW && hitStandPrev == HIGH) {
+    long duree = millis() - hitStandPressTime;   // on vient de relâcher
+    if (duree > dureeLongPress) {
+      digitalWrite(redLed, HIGH);
+      lcd.setCursor(0, 1);
+      lcd.print("Stand");
+      Serial.print("Action : Stand | Temps pressé : ");
+      Serial.println(duree);
+      delay(dureeDelay);
+      reset();
+    } else if (duree > dureeShortPress) {
+      digitalWrite(greenLed, HIGH);
+      lcd.setCursor(0, 1);
+      lcd.print("Hit");
+      Serial.print("Action : Hit | Temps pressé : ");
+      Serial.println(duree);
+      delay(dureeDelay);
+      reset();
+    }
   }
-  if (millis() - doubleSplitPressTime > 1000) { 
-    digitalWrite(greenLed, HIGH);
-    digitalWrite(blueLed, HIGH);
-    lcd.setCursor(0, 1);
-    lcd.print("Split");
-    delay(2000);
-    reset();
+  hitStandPrev = hitStandState;
 
-  } else if (millis() - doubleSplitPressTime > 5) {
-    digitalWrite(blueLed, HIGH);
-    lcd.setCursor(0, 1);
-    lcd.print("Double");
-    delay(2000);
-    reset();
-  } 
-
-  Serial.print("millis : ");
-  Serial.print(millis());
-  Serial.print(" | presstime : ");
-  Serial.print(hitStandPressTime);
-  Serial.print(" | presstime : ");
-  Serial.println(doubleSplitPressTime);
-
-
-
-  delay(500);
+  // Bouton Double/Split
+  if (doubleSplitState == HIGH && doubleSplitPrev == LOW) {
+    doubleSplitPressTime = millis();
+  }
+  if (doubleSplitState == LOW && doubleSplitPrev == HIGH) {
+    long duree = millis() - doubleSplitPressTime;
+    if (duree > dureeLongPress) {
+      digitalWrite(greenLed, HIGH);
+      digitalWrite(blueLed, HIGH);
+      lcd.setCursor(0, 1);
+      lcd.print("Split");
+      Serial.print("Action : Split | Temps pressé : ");
+      Serial.println(duree);
+      delay(dureeDelay);
+      reset();
+    } else if (duree > dureeShortPress) {
+      digitalWrite(blueLed, HIGH);
+      lcd.setCursor(0, 1);
+      lcd.print("Double");
+      Serial.print("Action : Double | Temps pressé : ");
+      Serial.println(duree);
+      delay(dureeDelay);
+      reset();
+    }
+  }
+  doubleSplitPrev = doubleSplitState;
 }
