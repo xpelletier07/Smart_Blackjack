@@ -9,7 +9,6 @@ Fonctionne avec :
 Touches :
   q  -> quitter
   d  -> activer/désactiver la détection de mouvement
-  f  -> activer/désactiver la détection de visages
   s  -> sauvegarder une capture d'écran (dans le dossier captures/)
 
 Installation sur le Raspberry Pi :
@@ -134,38 +133,10 @@ def detecter_mouvement(frame, frame_precedente_gris):
     return gris, zones
 
 
-def trouver_cascade(nom="haarcascade_frontalface_default.xml"):
-    """Cherche le fichier du détecteur de visages, selon comment OpenCV est installé."""
-    dossiers = []
-    # OpenCV installé avec pip : cv2.data existe
-    if hasattr(cv2, "data"):
-        dossiers.append(cv2.data.haarcascades)
-    # OpenCV installé avec apt (python3-opencv) : chemins système habituels
-    dossiers += [
-        "/usr/share/opencv4/haarcascades/",
-        "/usr/share/opencv/haarcascades/",
-        "/usr/local/share/opencv4/haarcascades/",
-    ]
-    for dossier in dossiers:
-        chemin = os.path.join(dossier, nom)
-        if os.path.exists(chemin):
-            return chemin
-    return None
-
-
 def main():
     camera = ouvrir_camera()
 
-    # Détecteur de visages fourni avec OpenCV
-    chemin_cascade = trouver_cascade()
-    if chemin_cascade:
-        detecteur_visages = cv2.CascadeClassifier(chemin_cascade)
-    else:
-        detecteur_visages = None
-        print("Fichier du détecteur de visages introuvable : touche 'f' désactivée.")
-
     mode_mouvement = True
-    mode_visages = False
     gris_precedent = None
     temps_precedent = time.time()
     fps = 0.0
@@ -186,17 +157,6 @@ def main():
                     cv2.putText(frame, "MOUVEMENT", (10, 60),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
-            # --- Analyse : visages ---
-            if mode_visages:
-                gris = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                visages = detecteur_visages.detectMultiScale(
-                    gris, scaleFactor=1.2, minNeighbors=5, minSize=(40, 40)
-                )
-                for (x, y, w, h) in visages:
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                cv2.putText(frame, f"Visages: {len(visages)}", (10, 90),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
-
             # --- FPS ---
             maintenant = time.time()
             fps = 0.9 * fps + 0.1 * (1.0 / max(maintenant - temps_precedent, 1e-6))
@@ -212,8 +172,6 @@ def main():
             elif touche == ord("d"):
                 mode_mouvement = not mode_mouvement
                 gris_precedent = None
-            elif touche == ord("f") and detecteur_visages is not None:
-                mode_visages = not mode_visages
             elif touche == ord("s"):
                 dossier_captures = "captures"
                 os.makedirs(dossier_captures, exist_ok=True)
