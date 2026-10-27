@@ -41,6 +41,11 @@ dossier dans le projet.
 
 Toutes les commandes Python se lancent depuis la **racine du dépôt**.
 
+Pour les éléments dans le rasberry Pi, ouvrir le venv avec
+```bash
+source ./venv/bin/activate
+```
+
 | Élément | Où l'exécuter | Commande |
 | --- | --- | --- |
 | Arduino | Poste de travail (Arduino IDE ou CLI) | voir [1. Arduino](#1-arduino) |
