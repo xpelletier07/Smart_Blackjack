@@ -62,10 +62,22 @@ void setup() {
   // Configuration moteur
   motor.setSpeed(motorSpeed);
 
+  starting_distribution();
+}
+
+void starting_distribution() {
   lcd.print("Smart Blackjack");
   lcd.setCursor(0, 1);
-  lcd.print("Ready!");
-  delay(2000);
+  lcd.print("Distributing...");
+
+  distribute_card(1);
+  delay(400);
+  distribute_card(1);
+  delay(400);
+  distribute_card(1);
+  delay(400);
+  distribute_card(1);
+
   lcd.clear();
   lcd.print("Action:");
 }
