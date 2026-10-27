@@ -57,7 +57,6 @@ void setup() {
   lcd.clear();
   lcd.print("Action:");
 
-  Serial.println("System initialized");
 }
 
 void reset() {
@@ -79,35 +78,7 @@ void distribute_card() {
   Serial.println("Card distributed");
 }
 
-void test_motor() {
-  Serial.println("Testing motor...");
-  lcd.setCursor(0, 1);
-  lcd.print("Motor Test");
-
-  motor.step(2048);
-  delay(500);
-
-  Serial.println("Motor test complete");
-}
-
-void handle_serial_command() {
-  if (Serial.available()) {
-    String command = Serial.readStringUntil('\n');
-    command.trim();
-
-    if (command == "CARD1") {
-      distribute_card();
-    }
-    else if (command == "TEST") {
-      test_motor();
-    }
-  }
-}
-
 void loop() {
-  handle_serial_command();
-
-  // Bouton Hit/Stand (travail des partenaires)
   int hitStandState = digitalRead(buttonHitStand);
   if (hitStandState == HIGH && hitStandPrev == LOW) {
     hitStandPressTime = millis();
@@ -137,7 +108,6 @@ void loop() {
   }
   hitStandPrev = hitStandState;
 
-  // Bouton Double/Split (travail des partenaires)
   int doubleSplitState = digitalRead(buttonDoubleSplit);
   if (doubleSplitState == HIGH && doubleSplitPrev == LOW) {
     doubleSplitPressTime = millis();
