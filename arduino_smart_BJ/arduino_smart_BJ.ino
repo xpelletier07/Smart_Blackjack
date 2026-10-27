@@ -45,6 +45,7 @@ int doubleSplitPrev = LOW;
 int buzzer_pin = 11;
 ezBuzzer buzzer(buzzer_pin, BUZZER_TYPE_PASSIVE, HIGH);
 
+
 void setup() {
   Serial.begin(9600);
   lcd.begin(16, 2);
@@ -67,16 +68,16 @@ void setup() {
   delay(2000);
   lcd.clear();
   lcd.print("Action:");
-
 }
 
 void reset() {
   digitalWrite(greenLed, LOW);
   digitalWrite(blueLed, LOW);
   digitalWrite(redLed, LOW);
-  lcd.setCursor(0, 1); 
+  lcd.setCursor(0, 1);
   lcd.print("                ");
 }
+
 
 // Melodie for Buzzer
 // Hit : mélodie ascendante
@@ -94,6 +95,23 @@ const int melodyStandNotes[] = {
 };
 
 const int melodyStandDurations[] = {
+  4, 2
+};
+
+// Double 
+const int melodyDoubleNotes[] = {
+  523, 659, 784
+};
+
+const int melodyDoubleDurations[] = {
+  8, 8, 4
+};
+// Split
+const int melodySplitNotes[] = {
+  784, 523
+};
+
+const int melodySplitDurations[] = {
   4, 2
 };
 
@@ -130,6 +148,16 @@ Melody melodyHit(
   melodyHitDurations,
   sizeof(melodyHitNotes) / sizeof(melodyHitNotes[0]));
 
+Melody melodyDouble(
+  melodyDoubleNotes,
+  melodyDoubleDurations,
+  sizeof(melodyDoubleNotes) / sizeof(melodyDoubleNotes[0]));
+
+Melody melodySplit(
+  melodySplitNotes,
+  melodySplitDurations,
+  sizeof(melodySplitNotes) / sizeof(melodySplitNotes[0]));
+
 void distribute_card(int Xturn) {
   motor.step(2048 * Xturn);
 }
@@ -147,9 +175,9 @@ void loop() {
       lcd.setCursor(0, 1);
       lcd.print("Stand");
       Serial.print("Action : Stand | Temps : ");
-      Serial.println(duree);
+      Serial.print(duree);
       melodyStand.play();
-      Serial.println("Moteur | OFF");
+      Serial.println(" | Moteur : OFF");
       actionStartTime = millis();
       actionEnCours = true;
     } else if (duree > dureeShortPress) {
@@ -157,9 +185,9 @@ void loop() {
       lcd.setCursor(0, 1);
       lcd.print("Hit");
       Serial.print("Action : Hit | Temps : ");
-      Serial.println(duree);
+      Serial.print(duree);
       melodyHit.play();
-      Serial.println("Moteur | ON : 1 tours");
+      Serial.println(" | Moteur : ON, 1 tours");
       distribute_card(1);
       actionStartTime = millis();
       actionEnCours = true;
@@ -180,7 +208,8 @@ void loop() {
       lcd.print("Split");
       Serial.print("Action : Split | Temps : ");
       Serial.print(duree);
-      Serial.println("Moteur | ON : 2 tours");
+      melodySplit.play();
+      Serial.println(" | Moteur : ON, 2 tours");
       distribute_card(1);
       delay(200);
       distribute_card(1);
@@ -192,16 +221,16 @@ void loop() {
       lcd.print("Double");
       Serial.print("Action : Double | Temps : ");
       Serial.print(duree);
-      Serial.println("Moteur | ON : 2 tours");
+      melodyDouble.play();
+      Serial.println(" | Moteur : ON, 2 tours");
       distribute_card(1);
       actionStartTime = millis();
       actionEnCours = true;
     }
   }
   doubleSplitPrev = doubleSplitState;
-  if (actionEnCours &&
-    millis() - actionStartTime >= dureeDelay) {
-  reset();
-  actionEnCours = false;
-}
+  if (actionEnCours && millis() - actionStartTime >= dureeDelay) {
+    reset();
+    actionEnCours = false;
+  }
 }

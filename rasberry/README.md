@@ -29,10 +29,15 @@ Sur le Raspberry Pi :
 ```bash
 sudo apt update
 sudo apt install -y python3-opencv python3-picamera2
+python3 -m pip install -r rasberry/requirements.txt
 ```
 
 Le script peut aussi utiliser l'ancienne bibliothèque `picamera` lorsqu'elle
 est déjà installée, notamment pour le matériel utilisé au laboratoire.
+
+> Installez `pyserial`, et non le paquet `serial`. Le module `serial` fourni
+> par `pyserial` expose la classe `serial.Serial` utilisée par
+> [`interpretation.py`](./interpretation.py) et [`moteur.py`](./moteur.py).
 
 ## Lancer le test de caméra
 
