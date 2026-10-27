@@ -1,5 +1,7 @@
 #include <LiquidCrystal.h>
 #include <ezBuzzer.h>
+#include <Stepper.h>
+
 LiquidCrystal lcd(2, 3, 4, 5, 6, 7);
 
 // Variables
@@ -8,14 +10,28 @@ unsigned long actionStartTime = 0;
 bool actionEnCours = false;
 
 //// LED
+
+// Boutons existants (travail des partenaires)
+int buttonHitStand = 12;
+int buttonDoubleSplit = 13;
+
+// LEDs existantes (travail des partenaires)
 int greenLed = 8;
 int blueLed = 9;
 int redLed = 10;
 
-//// Button
-int buttonHitStand = 12;
-int buttonDoubleSplit = 13;
+// Configuration moteur pas-à-pas 28BYJ-48 (moteur distribution)
+const int stepsPerRevolution = 2048;
+const int motorPin1 = A0;
+const int motorPin2 = A1;
+const int motorPin3 = A2;
+const int motorPin4 = A3;
 
+Stepper motor(stepsPerRevolution, motorPin1, motorPin3, motorPin2, motorPin4);
+const int motorSpeed = 15;  // RPM9
+
+
+// Timings
 int dureeLongPress = 500;
 int dureeShortPress = 50;
 int dureeDelay = 2000;
@@ -32,19 +48,33 @@ ezBuzzer buzzer(buzzer_pin, BUZZER_TYPE_PASSIVE, HIGH);
 void setup() {
   Serial.begin(9600);
   lcd.begin(16, 2);
+
+  // Configuration boutons
   pinMode(buttonHitStand, INPUT);
   pinMode(buttonDoubleSplit, INPUT);
+
+  // Configuration LEDs
   pinMode(greenLed, OUTPUT);
   pinMode(blueLed, OUTPUT);
   pinMode(redLed, OUTPUT);
-  lcd.print("Action :");
+
+  // Configuration moteur
+  motor.setSpeed(motorSpeed);
+
+  lcd.print("Smart Blackjack");
+  lcd.setCursor(0, 1);
+  lcd.print("Ready!");
+  delay(2000);
+  lcd.clear();
+  lcd.print("Action:");
+
 }
 
 void reset() {
   digitalWrite(greenLed, LOW);
   digitalWrite(blueLed, LOW);
   digitalWrite(redLed, LOW);
-  lcd.setCursor(0, 1);
+  lcd.setCursor(0, 1); 
   lcd.print("                ");
 }
 
@@ -100,13 +130,13 @@ Melody melodyHit(
   melodyHitDurations,
   sizeof(melodyHitNotes) / sizeof(melodyHitNotes[0]));
 
+void distribute_card(int Xturn) {
+  motor.step(2048 * Xturn);
+}
 
 void loop() {
   buzzer.loop();
   int hitStandState = digitalRead(buttonHitStand);
-  int doubleSplitState = digitalRead(buttonDoubleSplit);
-
-  // Bouton Hit/Stand
   if (hitStandState == HIGH && hitStandPrev == LOW) {
     hitStandPressTime = millis();  // on vient d'appuyer
   }
@@ -116,25 +146,28 @@ void loop() {
       digitalWrite(redLed, HIGH);
       lcd.setCursor(0, 1);
       lcd.print("Stand");
-      Serial.print("Action : Stand | Temps pressé : ");
+      Serial.print("Action : Stand | Temps : ");
       Serial.println(duree);
       melodyStand.play();
+      Serial.println("Moteur | OFF");
       actionStartTime = millis();
       actionEnCours = true;
     } else if (duree > dureeShortPress) {
       digitalWrite(greenLed, HIGH);
       lcd.setCursor(0, 1);
       lcd.print("Hit");
-      Serial.print("Action : Hit | Temps pressé : ");
+      Serial.print("Action : Hit | Temps : ");
       Serial.println(duree);
       melodyHit.play();
+      Serial.println("Moteur | ON : 1 tours");
+      distribute_card(1);
       actionStartTime = millis();
       actionEnCours = true;
     }
   }
   hitStandPrev = hitStandState;
 
-  // Bouton Double/Split
+  int doubleSplitState = digitalRead(buttonDoubleSplit);
   if (doubleSplitState == HIGH && doubleSplitPrev == LOW) {
     doubleSplitPressTime = millis();
   }
@@ -145,18 +178,24 @@ void loop() {
       digitalWrite(blueLed, HIGH);
       lcd.setCursor(0, 1);
       lcd.print("Split");
-      Serial.print("Action : Split | Temps pressé : ");
-      Serial.println(duree);
-      delay(dureeDelay);
-      reset();
+      Serial.print("Action : Split | Temps : ");
+      Serial.print(duree);
+      Serial.println("Moteur | ON : 2 tours");
+      distribute_card(1);
+      delay(200);
+      distribute_card(1);
+      actionStartTime = millis();
+      actionEnCours = true;
     } else if (duree > dureeShortPress) {
       digitalWrite(blueLed, HIGH);
       lcd.setCursor(0, 1);
       lcd.print("Double");
-      Serial.print("Action : Double | Temps pressé : ");
-      Serial.println(duree);
-      delay(dureeDelay);
-      reset();
+      Serial.print("Action : Double | Temps : ");
+      Serial.print(duree);
+      Serial.println("Moteur | ON : 2 tours");
+      distribute_card(1);
+      actionStartTime = millis();
+      actionEnCours = true;
     }
   }
   doubleSplitPrev = doubleSplitState;
