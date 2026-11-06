@@ -18,6 +18,12 @@ Le système de caméra permet de :
 - afficher le nombre d'images par seconde (FPS) ;
 - enregistrer des captures pour documenter les tests.
 
+## Comment créer le venv sur sa machine
+
+- Créer l'environnement virtuel : python -m venv venv
+- Activer l'environnement : ./venv/Scripts/activate sur Windows, source ./venv/bin/activate sur Linux
+- Installer le nécessaire : pip install aliot-py, pip install pyserial, pip install serial
+
 ## Organisation du dépôt
 
 ```text
@@ -52,7 +58,7 @@ source ./venv/bin/activate
 | Caméra (fenêtre) | Raspberry Pi | `python3 rasberry/camera.py` |
 | Caméra (page web) | Raspberry Pi | `python3 rasberry/camera_serveur.py` |
 | Moteur / Raspberry Pi | Raspberry Pi | `python3 rasberry/moteur.py` |
-| Interprétation | Poste branché à l'Arduino | `python3 rasberry/interpretation.py` |
+| Interprétation via blackjack_utils.py | Poste branché à l'Arduino | `python3 utils/blackjack_utils.py` |
 
 ## 1. Arduino
 
