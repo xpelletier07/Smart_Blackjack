@@ -192,7 +192,7 @@ void loop() {
       Serial.print(duree);
       Serial.print(":");
       Serial.print(false);
-      Serial.print(":")
+      Serial.print(":");
       Serial.println("0");
       actionStartTime = millis();
       actionEnCours = true;
@@ -206,7 +206,7 @@ void loop() {
       Serial.print(duree);
       Serial.print(":");
       Serial.print(true);
-      Serial.print(":")
+      Serial.print(":");
       Serial.println("1");
       distribute_card(1);
       actionStartTime = millis();
@@ -232,7 +232,7 @@ void loop() {
       Serial.print(duree);
       Serial.print(":");
       Serial.print(true);
-      Serial.print(":")
+      Serial.print(":");
       Serial.println("2");
       distribute_card(1);
       delay(200);
@@ -249,7 +249,7 @@ void loop() {
       Serial.print(duree);
       Serial.print(":");
       Serial.print(true);
-      Serial.print(":")
+      Serial.print(":");
       Serial.println("2");
       distribute_card(1);
       actionStartTime = millis();
