@@ -58,6 +58,7 @@ def get_latest_data():
 
 # Contrôle de la LED verte
 def set_green_led():
+    print("Appel de set_green_led()")
     if latest_data and latest_data.green_led:
         ser.write(b'GREEN_LED_OFF\n')
     else:
@@ -72,6 +73,7 @@ def switch_green_led():
 
 # Contrôle de la LED bleue
 def set_blue_led():
+    print("Appel de set_blue_led()")
     if latest_data and latest_data.blue_led:
         ser.write(b'BLUE_LED_OFF\n')
     else:
@@ -86,6 +88,7 @@ def switch_blue_led():
 
 # Contrôle de la LED rouge
 def set_red_led():
+    print("Appel de set_red_led()")
     if latest_data and latest_data.red_led:
         ser.write(b'RED_LED_OFF\n')
     else:
@@ -100,6 +103,7 @@ def switch_red_led():
 
 # Contrôle du buzzer
 def set_buzzer():
+    print("Appel de set_buzzer()")
     if latest_data and latest_data.buzzer:
         ser.write(b'BUZZER_OFF\n')
     else:
@@ -107,11 +111,13 @@ def set_buzzer():
 
 # Affichage du message sur l'écran LCD
 def broadcast_lcd(message):
+    print(f"Appel de broadcast_lcd({message})")
     if (message):
         ser.write(f'LCD:{message}\n'.encode())
 
 # Envoie une action à l'Arduino
 def faire_action(action):
+    print(f"Appel de faire_action({action})")
     if (action):
         ser.write(f'ACTION:{action}\n'.encode())
 
