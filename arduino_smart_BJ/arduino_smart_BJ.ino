@@ -186,20 +186,28 @@ void loop() {
       digitalWrite(redLed, HIGH);
       lcd.setCursor(0, 1);
       lcd.print("Stand");
-      Serial.print("Action : Stand | Temps : ");
-      Serial.print(duree);
       melodyStand.play();
-      Serial.println(" | Moteur : OFF");
+      Serial.print("Stand");
+      Serial.print(":");
+      Serial.print(duree);
+      Serial.print(":");
+      Serial.print(false);
+      Serial.print(":")
+      Serial.println("0");
       actionStartTime = millis();
       actionEnCours = true;
     } else if (duree > dureeShortPress) {
       digitalWrite(greenLed, HIGH);
       lcd.setCursor(0, 1);
       lcd.print("Hit");
-      Serial.print("Action : Hit | Temps : ");
-      Serial.print(duree);
       melodyHit.play();
-      Serial.println(" | Moteur : ON, 1 tours");
+      Serial.print("Hit");
+      Serial.print(":");
+      Serial.print(duree);
+      Serial.print(":");
+      Serial.print(true);
+      Serial.print(":")
+      Serial.println("1");
       distribute_card(1);
       actionStartTime = millis();
       actionEnCours = true;
@@ -218,10 +226,14 @@ void loop() {
       digitalWrite(blueLed, HIGH);
       lcd.setCursor(0, 1);
       lcd.print("Split");
-      Serial.print("Action : Split | Temps : ");
-      Serial.print(duree);
       melodySplit.play();
-      Serial.println(" | Moteur : ON, 2 tours");
+      Serial.print("Split");
+      Serial.print(":");
+      Serial.print(duree);
+      Serial.print(":");
+      Serial.print(true);
+      Serial.print(":")
+      Serial.println("2");
       distribute_card(1);
       delay(200);
       distribute_card(1);
@@ -231,10 +243,14 @@ void loop() {
       digitalWrite(blueLed, HIGH);
       lcd.setCursor(0, 1);
       lcd.print("Double");
-      Serial.print("Action : Double | Temps : ");
-      Serial.print(duree);
       melodyDouble.play();
-      Serial.println(" | Moteur : ON, 2 tours");
+      Serial.print("Double");
+      Serial.print(":");
+      Serial.print(duree);
+      Serial.print(":");
+      Serial.print(true);
+      Serial.print(":")
+      Serial.println("2");
       distribute_card(1);
       actionStartTime = millis();
       actionEnCours = true;
