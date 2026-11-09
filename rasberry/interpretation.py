@@ -3,7 +3,7 @@ import serial
 #from serial.tools import list_ports
 
 
-ser = serial.Serial("COM6", 9600)
+ser = serial.Serial("COM5", 9600)
 try:
     while True:
         if ser.in_waiting > 0:

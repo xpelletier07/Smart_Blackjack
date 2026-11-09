@@ -1,8 +1,14 @@
 #include <LiquidCrystal.h>
 #include <ezBuzzer.h>
 #include <Stepper.h>
+#include <TM1637Display.h>
 
 LiquidCrystal lcd(2, 3, 4, 5, 6, 7);
+
+#define CLK A4
+#define DIO A5
+
+TM1637Display display(CLK, DIO);
 
 // Variables
 
@@ -16,9 +22,9 @@ int buttonHitStand = 12;
 int buttonDoubleSplit = 13;
 
 // LEDs existantes (travail des partenaires)
-int greenLed = 8;
-int blueLed = 9;
-int redLed = 10;
+int greenLed = 9;
+int blueLed = 10;
+int redLed = 8;
 
 // Configuration moteur pas-à-pas 28BYJ-48 (moteur distribution)
 const int stepsPerRevolution = 2048;
@@ -62,6 +68,9 @@ void setup() {
   // Configuration moteur
   motor.setSpeed(motorSpeed);
 
+  // Configuration digit display
+  display.setBrightness(0x0f);
+
   starting_distribution();
 }
 
@@ -89,6 +98,7 @@ void reset() {
   digitalWrite(redLed, LOW);
   lcd.setCursor(0, 1);
   lcd.print("                ");
+  display.clear();
 }
 
 
@@ -177,7 +187,7 @@ void distribute_card(int Xturn) {
 }
 
 // Fonction pour afficher les informations sur le port série
-void affichage(String action, bool moteur, int nombre_tours, bool buzzer, bool greenLed = false, bool blueLed = false, bool redLed = false) {
+void affichage(String action, bool moteur, int nombre_tours, bool buzzer, bool greenLed, bool blueLed, bool redLed) {
   Serial.print(action);
   Serial.print(":");
   Serial.print(moteur);
@@ -199,6 +209,12 @@ void faireAction(String action) {
     digitalWrite(greenLed, HIGH);
     lcd.setCursor(0, 1);
     lcd.print("Hit");
+
+    // 4 Digit display
+    uint8_t seg_hit[] = { 0x00, 0x76, 0x06, 0x78 }; // [Vide], H, I, t
+    display.setSegments(seg_hit);
+
+
     melodyHit.play();
     affichage("Hit", true, 1, true, true, false, false);
     distribute_card(1);
@@ -208,6 +224,11 @@ void faireAction(String action) {
     digitalWrite(redLed, HIGH);
     lcd.setCursor(0, 1);
     lcd.print("Stand");
+
+    // 4 Digit display
+    uint8_t seg_stnd[] = { 0x6D, 0x78, 0x54, 0x5E }; // 5, t, n, d
+    display.setSegments(seg_stnd);
+
     melodyStand.play();
     affichage("Stand", false, 0, true, false, false, true);
     actionStartTime = millis();
@@ -216,6 +237,11 @@ void faireAction(String action) {
     digitalWrite(blueLed, HIGH);
     lcd.setCursor(0, 1);
     lcd.print("Double");
+
+    // 4 Digit display
+    uint8_t seg_dbl[] = { 0x00, 0x5E, 0x7C, 0x38 }; // [Vide], d, b, L
+    display.setSegments(seg_dbl);
+
     melodyDouble.play();
     affichage("Double", true, 1, true, false, true, false);
     distribute_card(1);
@@ -226,6 +252,11 @@ void faireAction(String action) {
     digitalWrite(blueLed, HIGH);
     lcd.setCursor(0, 1);
     lcd.print("Split");
+
+    // 4 Digit display
+    uint8_t seg_splt[] = { 0x6D, 0x73, 0x38, 0x78 }; // 5, P, L, t
+    display.setSegments(seg_splt);
+
     melodySplit.play();
     affichage("Split", true, 2, true, true, true, false);
     distribute_card(1);
@@ -291,9 +322,9 @@ void loop() {
     } else if (command == 'RED_LED_OFF') {
       digitalWrite(redLed, LOW);
     } else if (command == 'BUZZER_ON') {
-      buzzer.playTone(1000, 500);  
+      tone(buzzer_pin, 1000, 500);  
     } else if (command == 'BUZZER_OFF') {
-      buzzer.stopTone();
+      buzzer.stop();
     } else if (command == 'LCD') {
       String message = Serial.readStringUntil('\n');
       lcd.clear();
