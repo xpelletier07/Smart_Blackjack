@@ -75,10 +75,12 @@ void setup() {
 }
 
 void starting_distribution() {
+  display.clear();
+
   lcd.print("Smart Blackjack");
   lcd.setCursor(0, 1);
   lcd.print("Distributing...");
-  affichage("Distribution", true, 4, false, false, false, false);
+  affichage("Distribution", true, 4, false, false, false, false, "");
 
   distribute_card(1);
   delay(400);
@@ -98,7 +100,7 @@ void reset() {
   digitalWrite(redLed, LOW);
   lcd.setCursor(0, 1);
   lcd.print("                ");
-  display.clear();
+  affichage("Reset", false, 0, false, false, false, false, "");
 }
 
 
@@ -187,7 +189,7 @@ void distribute_card(int Xturn) {
 }
 
 // Fonction pour afficher les informations sur le port série
-void affichage(String action, bool moteur, int nombre_tours, bool buzzer, bool greenLed, bool blueLed, bool redLed) {
+void affichage(String action, bool moteur, int nombre_tours, bool buzzer, bool greenLed, bool blueLed, bool redLed, String digit_display) {
   Serial.print(action);
   Serial.print(":");
   Serial.print(moteur);
@@ -200,7 +202,9 @@ void affichage(String action, bool moteur, int nombre_tours, bool buzzer, bool g
   Serial.print(":");
   Serial.print(blueLed);
   Serial.print(":");
-  Serial.println(redLed);
+  Serial.print(redLed);
+  Serial.print(":");
+  Serial.println(digit_display);
 }
 
 // Fonction pour effectuer une action spécifique
@@ -216,7 +220,7 @@ void faireAction(String action) {
 
 
     melodyHit.play();
-    affichage("Hit", true, 1, true, true, false, false);
+    affichage("Hit", true, 1, true, true, false, false, "H1t");
     distribute_card(1);
     actionStartTime = millis();
     actionEnCours = true;
@@ -230,7 +234,7 @@ void faireAction(String action) {
     display.setSegments(seg_stnd);
 
     melodyStand.play();
-    affichage("Stand", false, 0, true, false, false, true);
+    affichage("Stand", false, 0, true, false, false, true, "5tnd");
     actionStartTime = millis();
     actionEnCours = true;
   } else if (action == "Double") {
@@ -243,7 +247,7 @@ void faireAction(String action) {
     display.setSegments(seg_dbl);
 
     melodyDouble.play();
-    affichage("Double", true, 1, true, false, true, false);
+    affichage("Double", true, 1, true, false, true, false, "dbL");
     distribute_card(1);
     actionStartTime = millis();
     actionEnCours = true;
@@ -258,7 +262,7 @@ void faireAction(String action) {
     display.setSegments(seg_splt);
 
     melodySplit.play();
-    affichage("Split", true, 2, true, true, true, false);
+    affichage("Split", true, 2, true, true, true, false, "5PLt");
     distribute_card(1);
     delay(200);
     distribute_card(1);
@@ -305,34 +309,44 @@ void loop() {
     actionEnCours = false;
   }
 
-  // Lecture des commandes série pour contrôler les LEDs, le buzzer, l'écran LCD et effectuer des actions spécifiques, les commandes proviennent de blackjack_utils.py
+  // Lecture des commandes série envoyées par blackjack_utils.py (format "COMMANDE" ou "COMMANDE:valeur")
   if (Serial.available() > 0) {
-    char command = Serial.read();
+    String ligne = Serial.readStringUntil('\n');
+    ligne.trim();
 
-    if (command == 'GREEN_LED_ON') {
+    // Séparation de la commande et de la valeur
+    String command = ligne;
+    String valeur = "";
+    int sep = ligne.indexOf(':');
+    if (sep != -1) {
+      command = ligne.substring(0, sep);
+      valeur = ligne.substring(sep + 1);
+    }
+
+    if (command == "GREEN_LED_ON") {
       digitalWrite(greenLed, HIGH);
-    } else if (command == 'GREEN_LED_OFF') {
+    } else if (command == "GREEN_LED_OFF") {
       digitalWrite(greenLed, LOW);
-    } else if (command == 'BLUE_LED_ON') {
+    } else if (command == "BLUE_LED_ON") {
       digitalWrite(blueLed, HIGH);
-    } else if (command == 'BLUE_LED_OFF') {
+    } else if (command == "BLUE_LED_OFF") {
       digitalWrite(blueLed, LOW);
-    } else if (command == 'RED_LED_ON') {
+    } else if (command == "RED_LED_ON") {
       digitalWrite(redLed, HIGH);
-    } else if (command == 'RED_LED_OFF') {
+    } else if (command == "RED_LED_OFF") {
       digitalWrite(redLed, LOW);
-    } else if (command == 'BUZZER_ON') {
-      tone(buzzer_pin, 1000, 500);  
-    } else if (command == 'BUZZER_OFF') {
+    } else if (command == "BUZZER_ON") {
+      tone(buzzer_pin, 1000, 500);
+    } else if (command == "BUZZER_OFF") {
       buzzer.stop();
-    } else if (command == 'LCD') {
-      String message = Serial.readStringUntil('\n');
+    } else if (command == "LCD") {
       lcd.clear();
       lcd.setCursor(0, 0);
-      lcd.print(message);
-    } else if (command == 'ACTION') {
-      String action = Serial.readStringUntil('\n');
-      faireAction(action);
+      lcd.print(valeur);
+    } else if (command == "ACTION") {
+      faireAction(valeur);
+    } else if (command == "SCORE") {
+      display.showNumberDec(valeur.toInt());
     }
   }
   

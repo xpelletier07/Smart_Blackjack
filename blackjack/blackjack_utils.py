@@ -16,13 +16,14 @@ class Data:
     green_led: bool
     blue_led: bool
     red_led: bool
+    digit_display: str
 
 latest_data = None
 
 def read_data() :
     data = ser.readline().decode().strip()
-    action, moteur, nombre_tours, buzzer, green_led, blue_led, red_led = data.split(':')
-    return action, moteur, nombre_tours, buzzer, green_led, blue_led, red_led
+    action, moteur, nombre_tours, buzzer, green_led, blue_led, red_led, digit_display = data.split(':')
+    return action, moteur, nombre_tours, buzzer, green_led, blue_led, red_led, digit_display
 
 def read_from_serial():
     global latest_data
@@ -31,7 +32,12 @@ def read_from_serial():
         while True:
             # Check if there is data available from Arduino
             if ser.in_waiting > 0:
-                action, moteur, nombre_tours, buzzer, green_led, blue_led, red_led = read_data()
+                action, moteur, nombre_tours, buzzer, green_led, blue_led, red_led, digit_display = read_data()
+                # Lors d'un reset, on garde la dernière action et le dernier affichage
+                if action == "Reset" and latest_data:
+                    action = latest_data.action
+                    nombre_tours = latest_data.nombre_tours
+                    digit_display = latest_data.digit_display
                 latest_data = Data(
                     action=action,
                     moteur=(moteur == "1"),
@@ -39,10 +45,12 @@ def read_from_serial():
                     buzzer=(buzzer == "1"),
                     green_led=(green_led == "1"),
                     blue_led=(blue_led == "1"),
-                    red_led=(red_led == "1")
+                    red_led=(red_led == "1"),
+                    digit_display=digit_display
                 )
                 print(f"Action : {latest_data.action}, moteur actif : {latest_data.moteur}, nombre de tours : {latest_data.nombre_tours}, buzzer actif : {latest_data.buzzer} ")
                 print(f"LED States - Green: {latest_data.green_led}, Blue: {latest_data.blue_led}, Red: {latest_data.red_led}")
+                print(f"Digit Display: {latest_data.digit_display}")
 
             time.sleep(1)
 
@@ -102,7 +110,7 @@ def switch_red_led():
     set_red_led()
 
 # Contrôle du buzzer
-def set_buzzer():
+def set_buzzer(b):
     print("Appel de set_buzzer()")
     if latest_data and latest_data.buzzer:
         ser.write(b'BUZZER_OFF\n')
@@ -122,9 +130,10 @@ def faire_action(action):
         ser.write(f'ACTION:{action}\n'.encode())
 
 # J'en ai aucune calisse d'idée de comment faire ça
-def afficher_score():
-    pass
-
+# def afficher_score(score):
+#     print("Appel de afficher_score()")
+#     if (score):
+#         ser.write(f'SCORE:{score}\n'.encode())
 
 try:
     t = threading.Thread(target=read_from_serial)
