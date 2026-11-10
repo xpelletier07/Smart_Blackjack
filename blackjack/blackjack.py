@@ -1,11 +1,13 @@
 # Documentation: https://alivecode.ca/docs/aliot
 from aliot.aliot_obj import AliotObj
+import time
+import blackjack_utils
 
 # Création de l'objet à partir du fichier de configuration
 blackjack = AliotObj("blackjack")
 import blackjack_utils
 
-
+# Fonction pour démarrer la boucle principale   
 def start():
     # Dernières données envoyées, pour éviter de mettre à jour le doc inutilement
     previous_doc = None
@@ -39,5 +41,14 @@ def start():
 # Appel de la fonction start une fois que l'objet se connecte au serveur
 blackjack.on_start(callback=start)
 
-# Connection de l'objet au serveur ALIVEcode
+# Appel des fonctions de blackjack_utils pour contrôler les LEDs, le buzzer, l'écran LCD et effectuer des actions spécifiques
+blackjack.on_action_recv(action_id="set_green_led", callback=blackjack_utils.set_green_led)
+blackjack.on_action_recv(action_id="set_blue_led", callback=blackjack_utils.set_blue_led)
+blackjack.on_action_recv(action_id="set_red_led", callback=blackjack_utils.set_red_led)
+blackjack.on_action_recv(action_id="set_buzzer", callback=blackjack_utils.set_buzzer)
+blackjack.on_action_recv(action_id="broadcast_lcd", callback=blackjack_utils.broadcast_lcd)
+blackjack.on_action_recv(action_id="faire_action", callback=blackjack_utils.faire_action)
+# blackjack.on_action_recv(action_id="afficher_score", callback=blackjack_utils.afficher_score)
+
+# Connection de l'objet au serveur ALIVEcode 
 blackjack.run()
