@@ -1,8 +1,14 @@
 #include <LiquidCrystal.h>
 #include <ezBuzzer.h>
 #include <Stepper.h>
+#include <TM1637Display.h>
 
 LiquidCrystal lcd(2, 3, 4, 5, 6, 7);
+
+#define CLK A4
+#define DIO A5
+
+TM1637Display display(CLK, DIO);
 
 // Variables
 
@@ -16,9 +22,9 @@ int buttonHitStand = 12;
 int buttonDoubleSplit = 13;
 
 // LEDs existantes (travail des partenaires)
-int greenLed = 8;
-int blueLed = 9;
-int redLed = 10;
+int greenLed = 9;
+int blueLed = 10;
+int redLed = 8;
 
 // Configuration moteur pas-à-pas 28BYJ-48 (moteur distribution)
 const int stepsPerRevolution = 2048;
@@ -62,13 +68,19 @@ void setup() {
   // Configuration moteur
   motor.setSpeed(motorSpeed);
 
+  // Configuration digit display
+  display.setBrightness(0x0f);
+
   starting_distribution();
 }
 
 void starting_distribution() {
+  display.clear();
+
   lcd.print("Smart Blackjack");
   lcd.setCursor(0, 1);
   lcd.print("Distributing...");
+  affichage("Distribution", true, 4, false, false, false, false, "");
 
   distribute_card(1);
   delay(400);
@@ -88,6 +100,7 @@ void reset() {
   digitalWrite(redLed, LOW);
   lcd.setCursor(0, 1);
   lcd.print("                ");
+  affichage("Reset", false, 0, false, false, false, false, "");
 }
 
 
@@ -170,12 +183,99 @@ Melody melodySplit(
   melodySplitDurations,
   sizeof(melodySplitNotes) / sizeof(melodySplitNotes[0]));
 
+// Fonction pour distribuer une carte ou plusieurs cartes en fonction du nombre de tours spécifié
 void distribute_card(int Xturn) {
   motor.step(2048 * Xturn);
 }
 
+// Fonction pour afficher les informations sur le port série
+void affichage(String action, bool moteur, int nombre_tours, bool buzzer, bool greenLed, bool blueLed, bool redLed, String digit_display) {
+  Serial.print(action);
+  Serial.print(":");
+  Serial.print(moteur);
+  Serial.print(":");
+  Serial.print(nombre_tours);
+  Serial.print(":");
+  Serial.print(buzzer);
+  Serial.print(":");
+  Serial.print(greenLed);
+  Serial.print(":");
+  Serial.print(blueLed);
+  Serial.print(":");
+  Serial.print(redLed);
+  Serial.print(":");
+  Serial.println(digit_display);
+}
+
+// Fonction pour effectuer une action spécifique
+void faireAction(String action) {
+  if (action == "Hit") {
+    digitalWrite(greenLed, HIGH);
+    lcd.setCursor(0, 1);
+    lcd.print("Hit");
+
+    // 4 Digit display
+    uint8_t seg_hit[] = { 0x00, 0x76, 0x06, 0x78 }; // [Vide], H, I, t
+    display.setSegments(seg_hit);
+
+
+    melodyHit.play();
+    affichage("Hit", true, 1, true, true, false, false, "H1t");
+    distribute_card(1);
+    actionStartTime = millis();
+    actionEnCours = true;
+  } else if (action == "Stand") {
+    digitalWrite(redLed, HIGH);
+    lcd.setCursor(0, 1);
+    lcd.print("Stand");
+
+    // 4 Digit display
+    uint8_t seg_stnd[] = { 0x6D, 0x78, 0x54, 0x5E }; // 5, t, n, d
+    display.setSegments(seg_stnd);
+
+    melodyStand.play();
+    affichage("Stand", false, 0, true, false, false, true, "5tnd");
+    actionStartTime = millis();
+    actionEnCours = true;
+  } else if (action == "Double") {
+    digitalWrite(blueLed, HIGH);
+    lcd.setCursor(0, 1);
+    lcd.print("Double");
+
+    // 4 Digit display
+    uint8_t seg_dbl[] = { 0x00, 0x5E, 0x7C, 0x38 }; // [Vide], d, b, L
+    display.setSegments(seg_dbl);
+
+    melodyDouble.play();
+    affichage("Double", true, 1, true, false, true, false, "dbL");
+    distribute_card(1);
+    actionStartTime = millis();
+    actionEnCours = true;
+  } else if (action == "Split") {
+    digitalWrite(greenLed, HIGH);
+    digitalWrite(blueLed, HIGH);
+    lcd.setCursor(0, 1);
+    lcd.print("Split");
+
+    // 4 Digit display
+    uint8_t seg_splt[] = { 0x6D, 0x73, 0x38, 0x78 }; // 5, P, L, t
+    display.setSegments(seg_splt);
+
+    melodySplit.play();
+    affichage("Split", true, 2, true, true, true, false, "5PLt");
+    distribute_card(1);
+    delay(200);
+    distribute_card(1);
+    actionStartTime = millis();
+    actionEnCours = true;
+  }
+}
+
+// Fonction principale de la boucle
 void loop() {
   buzzer.loop();
+
+  // Lecture de l'état des boutons et gestion des actions en fonction de la durée d'appui
   int hitStandState = digitalRead(buttonHitStand);
   if (hitStandState == HIGH && hitStandPrev == LOW) {
     hitStandPressTime = millis();  // on vient d'appuyer
@@ -183,38 +283,14 @@ void loop() {
   if (hitStandState == LOW && hitStandPrev == HIGH) {
     long duree = millis() - hitStandPressTime;  // on vient de relâcher
     if (duree > dureeLongPress) {
-      digitalWrite(redLed, HIGH);
-      lcd.setCursor(0, 1);
-      lcd.print("Stand");
-      melodyStand.play();
-      Serial.print("Stand");
-      Serial.print(":");
-      Serial.print(duree);
-      Serial.print(":");
-      Serial.print(false);
-      Serial.print(":");
-      Serial.println("0");
-      actionStartTime = millis();
-      actionEnCours = true;
+      faireAction("Stand");
     } else if (duree > dureeShortPress) {
-      digitalWrite(greenLed, HIGH);
-      lcd.setCursor(0, 1);
-      lcd.print("Hit");
-      melodyHit.play();
-      Serial.print("Hit");
-      Serial.print(":");
-      Serial.print(duree);
-      Serial.print(":");
-      Serial.print(true);
-      Serial.print(":");
-      Serial.println("1");
-      distribute_card(1);
-      actionStartTime = millis();
-      actionEnCours = true;
+      faireAction("Hit");
     }
   }
   hitStandPrev = hitStandState;
 
+  // Lecture de l'état du bouton Double/Split et gestion des actions en fonction de la durée d'appui
   int doubleSplitState = digitalRead(buttonDoubleSplit);
   if (doubleSplitState == HIGH && doubleSplitPrev == LOW) {
     doubleSplitPressTime = millis();
@@ -222,38 +298,9 @@ void loop() {
   if (doubleSplitState == LOW && doubleSplitPrev == HIGH) {
     long duree = millis() - doubleSplitPressTime;
     if (duree > dureeLongPress) {
-      digitalWrite(greenLed, HIGH);
-      digitalWrite(blueLed, HIGH);
-      lcd.setCursor(0, 1);
-      lcd.print("Split");
-      melodySplit.play();
-      Serial.print("Split");
-      Serial.print(":");
-      Serial.print(duree);
-      Serial.print(":");
-      Serial.print(true);
-      Serial.print(":");
-      Serial.println("2");
-      distribute_card(1);
-      delay(200);
-      distribute_card(1);
-      actionStartTime = millis();
-      actionEnCours = true;
+      faireAction("Split");
     } else if (duree > dureeShortPress) {
-      digitalWrite(blueLed, HIGH);
-      lcd.setCursor(0, 1);
-      lcd.print("Double");
-      melodyDouble.play();
-      Serial.print("Double");
-      Serial.print(":");
-      Serial.print(duree);
-      Serial.print(":");
-      Serial.print(true);
-      Serial.print(":");
-      Serial.println("2");
-      distribute_card(1);
-      actionStartTime = millis();
-      actionEnCours = true;
+      faireAction("Double");
     }
   }
   doubleSplitPrev = doubleSplitState;
@@ -261,4 +308,46 @@ void loop() {
     reset();
     actionEnCours = false;
   }
+
+  // Lecture des commandes série envoyées par blackjack_utils.py (format "COMMANDE" ou "COMMANDE:valeur")
+  if (Serial.available() > 0) {
+    String ligne = Serial.readStringUntil('\n');
+    ligne.trim();
+
+    // Séparation de la commande et de la valeur
+    String command = ligne;
+    String valeur = "";
+    int sep = ligne.indexOf(':');
+    if (sep != -1) {
+      command = ligne.substring(0, sep);
+      valeur = ligne.substring(sep + 1);
+    }
+
+    if (command == "GREEN_LED_ON") {
+      digitalWrite(greenLed, HIGH);
+    } else if (command == "GREEN_LED_OFF") {
+      digitalWrite(greenLed, LOW);
+    } else if (command == "BLUE_LED_ON") {
+      digitalWrite(blueLed, HIGH);
+    } else if (command == "BLUE_LED_OFF") {
+      digitalWrite(blueLed, LOW);
+    } else if (command == "RED_LED_ON") {
+      digitalWrite(redLed, HIGH);
+    } else if (command == "RED_LED_OFF") {
+      digitalWrite(redLed, LOW);
+    } else if (command == "BUZZER_ON") {
+      tone(buzzer_pin, 1000, 500);
+    } else if (command == "BUZZER_OFF") {
+      buzzer.stop();
+    } else if (command == "LCD") {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print(valeur);
+    } else if (command == "ACTION") {
+      faireAction(valeur);
+    } else if (command == "SCORE") {
+      display.showNumberDec(valeur.toInt());
+    }
+  }
+  
 }
