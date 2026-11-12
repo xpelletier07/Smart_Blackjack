@@ -30,8 +30,36 @@ def start():
             print("Exiting...")
             break
 
+# Scores saisis dans le dashboard pour la partie en cours
+scores = {"/doc/score": None, "/doc/dealer_score": None}
+
+# Envoie les scores à la route /results_game (table Results_Game) dès que les deux sont remplis
+def enregistrer_scores(fields):
+    for champ, valeur in fields.items():
+        if valeur not in (None, ""):
+            scores[champ] = valeur
+
+    if None in scores.values():
+        return
+
+    resultat = {
+        "score": int(scores["/doc/score"]),
+        "dealer_score": int(scores["/doc/dealer_score"]),
+        "date": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+    print(f"Envoi du résultat : {resultat}")
+    blackjack.send_route("/results_game", resultat)
+
+    # On vide les champs pour la prochaine partie
+    scores["/doc/score"] = None
+    scores["/doc/dealer_score"] = None
+    blackjack.update_doc({"/doc/score": None, "/doc/dealer_score": None})
+
 # Appel de la fonction start une fois que l'objet se connecte au serveur
 blackjack.on_start(callback=start)
+
+# Écoute des scores saisis dans le dashboard
+blackjack.listen_doc(fields=["/doc/score", "/doc/dealer_score"], callback=enregistrer_scores)
 
 # Appel des fonctions de blackjack_utils pour contrôler les LEDs, le buzzer, l'écran LCD et effectuer des actions spécifiques
 blackjack.on_action_recv(action_id="set_green_led", callback=blackjack_utils.set_green_led)
