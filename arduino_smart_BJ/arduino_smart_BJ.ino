@@ -92,6 +92,7 @@ void starting_distribution() {
 
   lcd.clear();
   lcd.print("Action:");
+  reset();
 }
 
 void reset() {
