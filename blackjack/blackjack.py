@@ -39,35 +39,46 @@ def start():
             break
 
 # Scores saisis dans le dashboard pour la partie en cours
-scores = {"/doc/score": None, "/doc/dealer_score": None}
+scores = {"score": None, "dealer_score": None}
 
-# Envoie les scores à la route /results_game (table Results_Game) dès que les deux sont remplis
-def enregistrer_scores(fields):
-    for champ, valeur in fields.items():
-        if valeur not in (None, ""):
-            scores[champ] = valeur
+# Enregistre un score reçu du dashboard, puis envoie le résultat à la route /results_game
+# (table Results_Game) dès que les deux scores sont remplis
+def enregistrer_score(nom, valeur):
+    try:
+        scores[nom] = int(valeur)
+    except (TypeError, ValueError):
+        print(f"Score invalide pour {nom} : {valeur!r}")
+        return
+
+    blackjack.update_doc({f"/doc/{nom}": scores[nom]})
 
     if None in scores.values():
         return
 
     resultat = {
-        "score": int(scores["/doc/score"]),
-        "dealer_score": int(scores["/doc/dealer_score"]),
+        "score": scores["score"],
+        "dealer_score": scores["dealer_score"],
         "date": time.strftime("%Y-%m-%d %H:%M:%S")
     }
     print(f"Envoi du résultat : {resultat}")
     blackjack.send_route("/results_game", resultat)
 
-    # On vide les champs pour la prochaine partie
-    scores["/doc/score"] = None
-    scores["/doc/dealer_score"] = None
-    blackjack.update_doc({"/doc/score": None, "/doc/dealer_score": None})
+    # On vide les scores pour la prochaine partie
+    scores["score"] = None
+    scores["dealer_score"] = None
+
+def send_score(valeur):
+    enregistrer_score("score", valeur)
+
+def send_dealer_score(valeur):
+    enregistrer_score("dealer_score", valeur)
 
 # Appel de la fonction start une fois que l'objet se connecte au serveur
 blackjack.on_start(callback=start)
 
-# Écoute des scores saisis dans le dashboard
-blackjack.listen_doc(fields=["/doc/score", "/doc/dealer_score"], callback=enregistrer_scores)
+# Réception des scores entrés avec les prompts du dashboard
+blackjack.on_action_recv(action_id="send_score", callback=send_score)
+blackjack.on_action_recv(action_id="send_dealer_score", callback=send_dealer_score)
 
 # Appel des fonctions de blackjack_utils pour contrôler les LEDs, le buzzer, l'écran LCD et effectuer des actions spécifiques
 blackjack.on_action_recv(action_id="set_green_led", callback=blackjack_utils.set_green_led)
