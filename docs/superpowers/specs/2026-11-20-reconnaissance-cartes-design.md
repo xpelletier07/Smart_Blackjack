@@ -27,7 +27,7 @@ vitesse acceptable.
 
 - Cible : Raspberry Pi 4, CPU seulement, **Raspberry Pi OS 64 bits** (`uname -m` → `aarch64`).
 - Caméra ouverte via `ouvrir_camera()` de `rasberry/camera.py`.
-- Dataset Roboflow déjà téléchargé au format **COCO JSON**.
+- Dataset Roboflow re-téléchargé au format **YOLOv8** (décision : pas de convertisseur COCO).
 
 ## Approches considérées
 
@@ -42,7 +42,7 @@ Choix de l'utilisateur : la plus facile à installer **et** la plus précise →
 ## Design
 
 1. **`ia/entrainement_cartes.ipynb`** (Google Colab, GPU) : téléversement du zip
-   COCO, conversion en format YOLO dans le notebook, entraînement YOLOv8n en
+   YOLOv8 de Roboflow, correction des chemins du `data.yaml`, entraînement YOLOv8n en
    640 px, validation, export NCNN, téléchargement du dossier du modèle.
 2. **`rasberry/modele/`** : le dossier NCNN exporté (~12 Mo), copié sur le Pi.
 3. **`rasberry/test_cartes.py`** : boucle caméra → détection → boîtes + nom de
@@ -56,4 +56,4 @@ Si les FPS sont trop bas, réexporter en 416 px sans réentraîner.
 ## Laissé au constructeur
 
 Hyperparamètres d'entraînement (époques, augmentations), seuil de confiance par
-défaut, détails de la conversion COCO selon la structure exacte du zip Roboflow.
+défaut, gestion de la structure exacte du zip Roboflow.
