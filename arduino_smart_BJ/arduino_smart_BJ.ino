@@ -348,7 +348,7 @@ void loop() {
       faireAction(valeur);
     } else if (command == "SCORE") {
       display.showNumberDec(valeur.toInt());
-    }
+    } 
   }
   
 }
