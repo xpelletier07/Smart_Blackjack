@@ -52,7 +52,8 @@ def main():
             dessiner(frame, detections)
 
             cartes = cartes_uniques(detections)
-            if cartes != cartes_precedentes:
+            # Comparaison sans l'ordre : deux cartes de confiance proche s'échangent souvent de place
+            if cartes_precedentes is None or set(cartes) != set(cartes_precedentes):
                 print(f"Cartes vues : {', '.join(cartes) if cartes else 'aucune'}")
                 cartes_precedentes = cartes
 

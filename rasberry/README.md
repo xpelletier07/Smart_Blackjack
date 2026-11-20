@@ -141,6 +141,12 @@ source ./venv/bin/activate
 python3 -m pip install -r rasberry/requirements.txt
 ```
 
+Vérifier que la caméra Pi fonctionne toujours (numpy doit être en version 1.x) :
+
+```bash
+python3 -c "import picamera2, numpy; print('OK, numpy', numpy.__version__)"
+```
+
 Copier ensuite le dossier `cartes_ncnn_model/` dans `rasberry/modele/` :
 
 ```text

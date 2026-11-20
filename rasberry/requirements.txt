@@ -1,2 +1,7 @@
 pyserial
 ultralytics
+ncnn
+# picamera2 (installé par apt) est compilé pour numpy 1.x :
+# sans ces limites, pip installe numpy 2 et la caméra Pi ne s'ouvre plus.
+numpy<2
+opencv-python<4.12
