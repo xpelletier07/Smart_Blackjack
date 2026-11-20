@@ -35,8 +35,13 @@ Smart_Blackjack/
 │   ├── requirements.txt        # dépendances Python (pyserial)
 │   ├── camera.py               # caméra + détection de mouvement (fenêtre OpenCV)
 │   ├── camera_serveur.py       # caméra diffusée sur une page web
+│   ├── detection_cartes.py     # reconnaissance des cartes (modèle YOLOv8)
+│   ├── test_cartes.py          # test de la reconnaissance avec la caméra
+│   ├── modele/                 # modèle NCNN entraîné (cartes_ncnn_model/)
 │   ├── moteur.py               # bouton GPIO -> commande série vers l'Arduino
 │   └── interpretation.py       # lecture des messages série de l'Arduino
+├── ia/
+│   └── entrainement_cartes.ipynb  # entraînement du modèle sur Google Colab
 └── README.md
 ```
 
@@ -58,6 +63,7 @@ source ./venv/bin/activate
 | Caméra (fenêtre) | Raspberry Pi | `python3 rasberry/camera.py` |
 | Caméra (page web) | Raspberry Pi | `python3 rasberry/camera_serveur.py` |
 | Moteur / Raspberry Pi | Raspberry Pi | `python3 rasberry/moteur.py` |
+| Reconnaissance des cartes | Raspberry Pi | `python3 rasberry/test_cartes.py` (voir [rasberry/README.md](rasberry/README.md#reconnaissance-des-cartes)) |
 | Interprétation via blackjack_utils.py | Poste branché à l'Arduino | `python3 utils/blackjack_utils.py` |
 
 ## 1. Arduino

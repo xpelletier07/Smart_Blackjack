@@ -107,3 +107,78 @@ Les réglages se trouvent au début de
 
 Un seuil de mouvement plus bas rend la détection plus sensible. Une aire
 minimale plus élevée réduit les petites détections parasites.
+
+## Reconnaissance des cartes
+
+Le script [`test_cartes.py`](./test_cartes.py) reconnaît les cartes posées sur
+la table grâce à un modèle YOLOv8 entraîné sur le dataset Roboflow. Le code de
+détection, réutilisable, se trouve dans [`detection_cartes.py`](./detection_cartes.py).
+
+### 1. Entraîner le modèle (une seule fois, sur Google Colab)
+
+1. Sur Roboflow, exporter le dataset au format **YOLOv8** (zip).
+2. Ouvrir [`ia/entrainement_cartes.ipynb`](../ia/entrainement_cartes.ipynb)
+   dans Google Colab, choisir un environnement **GPU**, puis exécuter les
+   cellules dans l'ordre.
+3. Le notebook télécharge `modele_cartes.zip`, qui contient :
+   - `cartes_ncnn_model/` : le modèle pour le Raspberry Pi ;
+   - `best.pt` : le modèle d'origine, à garder pour un éventuel réexport.
+
+### 2. Installer sur le Raspberry Pi
+
+Le modèle exige un **Raspberry Pi OS 64 bits**. Vérifier avec :
+
+```bash
+uname -m   # doit afficher aarch64
+```
+
+Si vous utilisez un venv, créez-le avec `--system-site-packages` pour garder
+accès à `picamera2` installé par `apt` :
+
+```bash
+python3 -m venv --system-site-packages venv
+source ./venv/bin/activate
+python3 -m pip install -r rasberry/requirements.txt
+```
+
+Copier ensuite le dossier `cartes_ncnn_model/` dans `rasberry/modele/` :
+
+```text
+rasberry/modele/cartes_ncnn_model/
+```
+
+### 3. Lancer le test
+
+Depuis la racine du dépôt :
+
+```bash
+python3 rasberry/test_cartes.py
+```
+
+La fenêtre `Cartes - Smart Blackjack` encadre chaque carte reconnue avec son
+nom et sa confiance. Le terminal affiche la liste des cartes vues à chaque
+changement. Une carte dont les deux coins sont visibles n'est comptée qu'une
+fois.
+
+| Touche | Action |
+| --- | --- |
+| `q` | Quitter le programme |
+| `s` | Enregistrer une capture |
+
+### Réglages
+
+Au début de [`detection_cartes.py`](./detection_cartes.py) :
+
+- `SEUIL_CONFIANCE` : en dessous, une détection est ignorée (`0.5` par défaut) ;
+- `TAILLE_IMAGE` : doit être la même que celle de l'export (`640` par défaut).
+
+Si le nombre d'images par seconde est trop bas, réexportez le modèle en 416 px
+sans réentraîner (sur Colab ou un PC avec `ultralytics`) :
+
+```python
+from ultralytics import YOLO
+YOLO("best.pt").export(format="ncnn", imgsz=416)
+```
+
+Remplacez alors `rasberry/modele/cartes_ncnn_model/` par le nouveau dossier
+(renommé) et mettez `TAILLE_IMAGE = 416`.
