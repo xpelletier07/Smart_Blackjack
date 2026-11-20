@@ -150,3 +150,6 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Modèles PyTorch d'origine (lourds) : seul le dossier NCNN est versionné
+*.pt

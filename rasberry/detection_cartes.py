@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-detection_cartes.py - Reconnaissance des cartes avec le modèle YOLOv8 (format NCNN).
+detection_cartes.py - Reconnaissance des cartes avec un modèle YOLO (format NCNN).
 
-Le modèle est entraîné avec le notebook ia/entrainement_cartes.ipynb (Colab),
-puis le dossier cartes_ncnn_model/ est copié dans rasberry/modele/.
+Le modèle (YOLO11s pré-entraîné, converti en NCNN) est dans
+rasberry/modele/cartes_ncnn_model/ : voir rasberry/README.md pour le changer.
 
 Installation sur le Raspberry Pi (OS 64 bits) :
   python3 -m pip install -r rasberry/requirements.txt
@@ -45,8 +45,8 @@ class DetecteurCartes:
         if not os.path.isdir(chemin_modele):
             raise FileNotFoundError(
                 f"Modèle introuvable : {chemin_modele}\n"
-                "Entraînez-le avec le notebook ia/entrainement_cartes.ipynb (Colab), "
-                "puis copiez le dossier cartes_ncnn_model/ dans rasberry/modele/."
+                "Convertissez un modèle .pt en NCNN (voir rasberry/README.md) "
+                "et copiez le dossier cartes_ncnn_model/ dans rasberry/modele/."
             )
         from ultralytics import YOLO  # import ici : lourd, et absent sur le PC de test
 

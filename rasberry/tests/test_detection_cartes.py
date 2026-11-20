@@ -14,5 +14,5 @@ def test_aucune_detection():
 
 
 def test_modele_absent_message_clair(tmp_path):
-    with pytest.raises(FileNotFoundError, match="entrainement_cartes"):
+    with pytest.raises(FileNotFoundError, match="README"):
         DetecteurCartes(chemin_modele=tmp_path / "absent")

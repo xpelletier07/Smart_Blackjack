@@ -111,18 +111,34 @@ minimale plus élevée réduit les petites détections parasites.
 ## Reconnaissance des cartes
 
 Le script [`test_cartes.py`](./test_cartes.py) reconnaît les cartes posées sur
-la table grâce à un modèle YOLOv8 entraîné sur le dataset Roboflow. Le code de
-détection, réutilisable, se trouve dans [`detection_cartes.py`](./detection_cartes.py).
+la table. Le code de détection, réutilisable, se trouve dans
+[`detection_cartes.py`](./detection_cartes.py).
 
-### 1. Entraîner le modèle (une seule fois, sur Google Colab)
+### 1. Le modèle (déjà fourni)
 
-1. Sur Roboflow, exporter le dataset au format **YOLOv8** (zip).
-2. Ouvrir [`ia/entrainement_cartes.ipynb`](../ia/entrainement_cartes.ipynb)
-   dans Google Colab, choisir un environnement **GPU**, puis exécuter les
-   cellules dans l'ordre.
-3. Le notebook télécharge `modele_cartes.zip`, qui contient :
-   - `cartes_ncnn_model/` : le modèle pour le Raspberry Pi ;
-   - `best.pt` : le modèle d'origine, à garder pour un éventuel réexport.
+Le modèle est un **YOLO11s pré-entraîné** sur les 52 cartes
+([sroot/yolo11s-playing-cards-detector](https://huggingface.co/sroot/yolo11s-playing-cards-detector),
+licence AGPL-3.0), converti au format **NCNN**, le plus rapide sur le CPU du Pi.
+Il est déjà dans le dépôt :
+
+```text
+rasberry/modele/cartes_ncnn_model/
+```
+
+Les noms des cartes sont la valeur suivie de la couleur : `AH` (as de cœur),
+`10C` (dix de trèfle), `KS` (roi de pique)… avec `C` trèfle, `D` carreau,
+`H` cœur, `S` pique.
+
+Pour **changer de modèle** (autre `.pt` trouvé en ligne ou entraîné), la
+conversion se fait sur n'importe quel PC, sans carte graphique (environ 1 min) :
+
+```bash
+pip install ultralytics
+yolo export model=best.pt format=ncnn imgsz=640
+```
+
+Renommer ensuite le dossier `best_ncnn_model/` produit en `cartes_ncnn_model/`
+et remplacer celui de `rasberry/modele/`.
 
 ### 2. Installer sur le Raspberry Pi
 
@@ -145,12 +161,6 @@ Vérifier que la caméra Pi fonctionne toujours (numpy doit être en version 1.x
 
 ```bash
 python3 -c "import picamera2, numpy; print('OK, numpy', numpy.__version__)"
-```
-
-Copier ensuite le dossier `cartes_ncnn_model/` dans `rasberry/modele/` :
-
-```text
-rasberry/modele/cartes_ncnn_model/
 ```
 
 ### 3. Lancer le test
@@ -179,7 +189,7 @@ Au début de [`detection_cartes.py`](./detection_cartes.py) :
 - `TAILLE_IMAGE` : doit être la même que celle de l'export (`640` par défaut).
 
 Si le nombre d'images par seconde est trop bas, réexportez le modèle en 416 px
-sans réentraîner (sur Colab ou un PC avec `ultralytics`) :
+(sur un PC avec `ultralytics`, à partir du `.pt` d'origine) :
 
 ```python
 from ultralytics import YOLO

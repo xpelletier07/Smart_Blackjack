@@ -57,3 +57,11 @@ Si les FPS sont trop bas, réexporter en 416 px sans réentraîner.
 
 Hyperparamètres d'entraînement (époques, augmentations), seuil de confiance par
 défaut, gestion de la structure exacte du zip Roboflow.
+
+## Mise à jour (2026-11-20)
+
+Pas de GPU NVIDIA ni d'envie d'utiliser Colab : l'entraînement est abandonné au
+profit d'un modèle **pré-entraîné** (YOLO11s, 52 classes,
+[sroot/yolo11s-playing-cards-detector](https://huggingface.co/sroot/yolo11s-playing-cards-detector)),
+converti en NCNN et versionné dans `rasberry/modele/cartes_ncnn_model/`.
+Le notebook Colab est retiré. Précision réelle sur la table à vérifier.
