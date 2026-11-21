@@ -194,7 +194,9 @@ sont au **joueur**, celles **en dessous** au **croupier**. Le score de chaque
 main (as à 11 ou 1, figures à 10) est affiché de part et d'autre de la ligne et
 écrit dans le terminal à chaque changement. On joue avec un seul paquet : une
 carte dont les deux coins sont visibles n'est comptée qu'une fois, du côté du
-milieu de ses deux coins. Le calcul est dans [`scores.py`](./scores.py).
+milieu de ses deux coins. Pour que les scores ne clignotent pas, une carte
+n'est retenue que si elle est vue dans au moins 3 des 5 dernières images. Le
+calcul est dans [`scores.py`](./scores.py).
 
 | Touche | Action |
 | --- | --- |
@@ -209,6 +211,9 @@ Au début de [`detection_cartes.py`](./detection_cartes.py) :
 - `TAILLE_IMAGE` : doit être la même que celle de l'export (`640` par défaut).
 - `LIGNE_PARTAGE` (dans `scores.py`) : position de la ligne joueur / croupier
   dans la zone de jeu (`0.5` = au milieu, plus grand = croupier plus petit) ;
+- `NB_IMAGES_STABLES` et `MINIMUM_VOTES` (dans `scores.py`) : la stabilisation
+  (`5` et `3` par défaut). Plus haut = plus stable mais plus lent à réagir ;
+  à environ 2 images par seconde, une carte posée apparaît après 1 à 2 s ;
 - `ZONE_JEU` : rectangle `(x1, y1, x2, y2)` de l'image où sont posées les
   cartes ; seule cette partie est analysée (`None` = toute l'image). Elle est
   dessinée en bleu dans la fenêtre. **C'est le réglage qui compte le plus** :

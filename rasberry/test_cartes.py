@@ -22,7 +22,7 @@ import cv2
 
 from camera import ouvrir_camera
 from detection_cartes import DetecteurCartes
-from scores import position_ligne, separer_mains, valeur_main
+from scores import Stabilisateur, position_ligne, separer_mains, valeur_main
 
 
 def dessiner(frame, detections, zone):
@@ -45,6 +45,7 @@ def main():
     detecteur = DetecteurCartes()
     camera = ouvrir_camera()
 
+    stabilisateur = Stabilisateur()
     mains_precedentes = None
     temps_precedent = time.time()
     fps = 0.0
@@ -66,13 +67,13 @@ def main():
             x1, x2 = (detecteur.zone[0], detecteur.zone[2]) if detecteur.zone else (0, largeur)
             cv2.line(frame, (x1, ligne_y), (x2, ligne_y), (255, 0, 0), 2)
 
-            joueur, croupier = separer_mains(detections, ligne_y)
+            # Mains stables : une carte doit être vue dans la plupart des dernières images
+            joueur, croupier = stabilisateur.ajouter(*separer_mains(detections, ligne_y))
             score_joueur, score_croupier = valeur_main(joueur), valeur_main(croupier)
             afficher_score(frame, f"Joueur : {score_joueur}", ligne_y - 12)
             afficher_score(frame, f"Croupier : {score_croupier}", ligne_y + 28)
 
-            # Comparaison sans l'ordre : deux cartes de confiance proche s'échangent souvent de place
-            mains = (set(joueur), set(croupier))
+            mains = (joueur, croupier)
             if mains != mains_precedentes:
                 print(f"Joueur : {', '.join(joueur) or '-'} = {score_joueur}   |   "
                       f"Croupier : {', '.join(croupier) or '-'} = {score_croupier}")

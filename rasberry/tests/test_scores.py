@@ -1,5 +1,5 @@
 from detection_cartes import Detection
-from scores import position_ligne, separer_mains, valeur_main
+from scores import Stabilisateur, position_ligne, separer_mains, valeur_main
 
 
 def test_valeur_cartes_simples():
@@ -56,3 +56,38 @@ def test_carte_a_cheval_sur_la_ligne_comptee_d_un_seul_cote():
     joueur, croupier = separer_mains(detections, ligne_y=240)
     assert joueur == ["7H"]
     assert croupier == ["KS"]
+
+
+def test_stabilisateur_carte_retenue_apres_plusieurs_images():
+    s = Stabilisateur(nb_images=5, minimum=3)
+    assert s.ajouter(["KS"], []) == ([], [])
+    assert s.ajouter(["KS"], []) == ([], [])
+    assert s.ajouter(["KS"], []) == (["KS"], [])
+
+
+def test_stabilisateur_ignore_une_carte_fantome():
+    s = Stabilisateur(nb_images=5, minimum=3)
+    for _ in range(4):
+        s.ajouter(["KS"], ["AD"])
+    assert s.ajouter(["KS", "8S"], ["AD"]) == (["KS"], ["AD"])
+
+
+def test_stabilisateur_garde_une_carte_ratee_une_fois():
+    s = Stabilisateur(nb_images=5, minimum=3)
+    for _ in range(4):
+        s.ajouter(["KS", "7H"], [])
+    assert s.ajouter(["KS"], []) == (["7H", "KS"], [])
+
+
+def test_stabilisateur_carte_retiree_finit_par_disparaitre():
+    s = Stabilisateur(nb_images=5, minimum=3)
+    for _ in range(5):
+        s.ajouter(["KS"], [])
+    resultats = [s.ajouter([], []) for _ in range(3)]
+    assert resultats[-1] == ([], [])
+
+
+def test_stabilisateur_mains_separees():
+    s = Stabilisateur(nb_images=3, minimum=2)
+    s.ajouter(["KS"], ["AD"])
+    assert s.ajouter(["KS"], ["AD"]) == (["KS"], ["AD"])

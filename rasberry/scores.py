@@ -10,10 +10,14 @@ On joue avec un seul paquet : un nom de carte (ex. "8D") correspond toujours à
 une seule carte, même si ses deux coins sont vus.
 """
 
+from collections import Counter, deque
+
 from detection_cartes import cartes_uniques
 
 # ----------------------------- Réglages ------------------------------------
 LIGNE_PARTAGE = 0.5   # position de la ligne dans la zone de jeu (0 = haut, 1 = bas)
+NB_IMAGES_STABLES = 5 # nombre d'images récentes prises en compte par le vote
+MINIMUM_VOTES = 3     # une carte est retenue si elle est vue dans au moins ce nombre d'images
 # ---------------------------------------------------------------------------
 
 
@@ -55,3 +59,23 @@ def separer_mains(detections, ligne_y):
         milieu = sum(centres[d.nom]) / len(centres[d.nom])
         (haut if milieu < ligne_y else bas).append(d)
     return cartes_uniques(haut), cartes_uniques(bas)
+
+
+class Stabilisateur:
+    """Évite que les mains clignotent : une carte n'est retenue que si elle est
+    vue dans au moins `minimum` des `nb_images` dernières images. Une erreur du
+    modèle sur une seule image (carte fantôme ou carte ratée) est ainsi ignorée."""
+
+    def __init__(self, nb_images=NB_IMAGES_STABLES, minimum=MINIMUM_VOTES):
+        self.historique = deque(maxlen=nb_images)
+        self.minimum = minimum
+
+    def ajouter(self, joueur, croupier):
+        """Ajoute les mains d'une image et retourne les mains stables
+        (joueur, croupier), triées par nom."""
+        self.historique.append((set(joueur), set(croupier)))
+        return self._stable(0), self._stable(1)
+
+    def _stable(self, main):
+        votes = Counter(nom for mains in self.historique for nom in mains[main])
+        return sorted(nom for nom, nb in votes.items() if nb >= self.minimum)
