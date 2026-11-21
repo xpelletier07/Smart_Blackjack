@@ -129,8 +129,11 @@ Les noms des cartes sont la valeur suivie de la couleur : `AH` (as de cœur),
 `10C` (dix de trèfle), `KS` (roi de pique)… avec `C` trèfle, `D` carreau,
 `H` cœur, `S` pique.
 
+Sur le Pi, le modèle est lancé directement avec la bibliothèque `ncnn`
+(environ 10 Mo) : pas besoin d'installer `ultralytics` ni `torch`, trop lourds.
+
 Pour **changer de modèle** (autre `.pt` trouvé en ligne ou entraîné), la
-conversion se fait sur n'importe quel PC, sans carte graphique (environ 1 min) :
+conversion se fait sur un PC, sans carte graphique (environ 1 min) :
 
 ```bash
 pip install ultralytics
@@ -152,9 +155,16 @@ Si vous utilisez un venv, créez-le avec `--system-site-packages` pour garder
 accès à `picamera2` installé par `apt` :
 
 ```bash
+sudo apt install -y python3-opencv python3-picamera2
 python3 -m venv --system-site-packages venv
 source ./venv/bin/activate
 python3 -m pip install -r rasberry/requirements.txt
+```
+
+Vérifier que `ncnn` est bien installé :
+
+```bash
+python3 -c "import ncnn; print('ncnn', ncnn.__version__)"
 ```
 
 Vérifier que la caméra Pi fonctionne toujours (numpy doit être en version 1.x) :

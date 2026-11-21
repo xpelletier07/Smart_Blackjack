@@ -1,7 +1,6 @@
 pyserial
-ultralytics
+# Lance le modèle de cartes (pas besoin d'ultralytics ni de torch sur le Pi)
 ncnn
-# picamera2 (installé par apt) est compilé pour numpy 1.x :
-# sans ces limites, pip installe numpy 2 et la caméra Pi ne s'ouvre plus.
+# picamera2 et OpenCV (installés par apt) sont compilés pour numpy 1.x :
+# sans cette limite, pip pourrait installer numpy 2 et la caméra Pi ne s'ouvrirait plus.
 numpy<2
-opencv-python<4.12
