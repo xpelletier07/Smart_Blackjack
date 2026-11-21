@@ -23,7 +23,7 @@ import numpy as np
 CHEMIN_MODELE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              "modele", "cartes_ncnn_model")
 SEUIL_CONFIANCE = 0.3     # en dessous, la détection est ignorée
-SEUIL_CHEVAUCHEMENT = 0.7 # deux boîtes de la même carte plus chevauchantes = doublon
+SEUIL_CHEVAUCHEMENT = 0.5 # deux boîtes plus chevauchantes = le même coin, lu deux fois
 TAILLE_IMAGE = 640        # doit correspondre à l'imgsz de l'export
 NB_THREADS = 4            # le Pi 4 a 4 cœurs
 # Zone de jeu (x1, y1, x2, y2) en pixels de l'image caméra : seule cette partie est
@@ -124,11 +124,10 @@ def decoder_sortie(sortie, ratio, pad, seuil, largeur, hauteur, noms,
     classes, confiances = classes[garder], confiances[garder]
     boites = np.stack([cx - w / 2, cy - h / 2, w, h], axis=1)
 
-    # NMS par carte : on décale chaque classe pour que deux cartes différentes
-    # qui se chevauchent ne s'éliminent pas
-    decalees = boites.copy()
-    decalees[:, :2] += classes[:, None] * 4096
-    indices = cv2.dnn.NMSBoxes(decalees.tolist(), confiances.tolist(), seuil, seuil_chevauchement)
+    # NMS sans tenir compte du nom : un même coin lu de deux façons (ex. "QC" et
+    # "QS") ne garde que la lecture la plus sûre. Les coins de cartes différentes,
+    # même en escalier, sont décalés et ne se superposent pas.
+    indices = cv2.dnn.NMSBoxes(boites.tolist(), confiances.tolist(), seuil, seuil_chevauchement)
 
     detections = []
     for i in np.array(indices).flatten():

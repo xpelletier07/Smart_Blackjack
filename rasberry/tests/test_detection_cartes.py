@@ -89,3 +89,25 @@ def test_rogner_zone_bornee_a_l_image():
 def test_decaler_detections():
     d = [Detection("AH", 0.9, (10, 20, 30, 40))]
     assert decaler_detections(d, (130, 120))[0].boite == (140, 140, 160, 160)
+
+
+def test_decoder_sortie_un_seul_nom_par_coin():
+    # cas réel : le même coin lu "QC" (0.58) et "QS" (0.32) -> on garde le plus sûr
+    sortie = _sortie([
+        (279, 114, 12, 24, 0, 0.58),
+        (278.5, 113.5, 11, 25, 2, 0.32),
+    ])
+    detections = decoder_sortie(sortie, ratio=1.0, pad=(0, 0), seuil=0.3,
+                                largeur=640, hauteur=480, noms={0: "QC", 1: "AH", 2: "QS"})
+    assert [d.nom for d in detections] == ["QC"]
+
+
+def test_decoder_sortie_cartes_voisines_gardees():
+    # coins de deux cartes en escalier : décalés, ils ne se superposent pas
+    sortie = _sortie([
+        (279, 114, 12, 24, 0, 0.7),
+        (315, 88, 12, 24, 1, 0.7),
+    ])
+    detections = decoder_sortie(sortie, ratio=1.0, pad=(0, 0), seuil=0.3,
+                                largeur=640, hauteur=480, noms={0: "QC", 1: "5H", 2: "QS"})
+    assert sorted(d.nom for d in detections) == ["5H", "QC"]
