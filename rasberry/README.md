@@ -200,6 +200,15 @@ Au début de [`detection_cartes.py`](./detection_cartes.py) :
 
 - `SEUIL_CONFIANCE` : en dessous, une détection est ignorée (`0.5` par défaut) ;
 - `TAILLE_IMAGE` : doit être la même que celle de l'export (`640` par défaut).
+- `ZONE_JEU` : rectangle `(x1, y1, x2, y2)` de l'image où sont posées les
+  cartes ; seule cette partie est analysée (`None` = toute l'image). Elle est
+  dessinée en bleu dans la fenêtre. **C'est le réglage qui compte le plus** :
+  plus la zone est serrée autour des cartes, plus elles paraissent grandes au
+  modèle. Pour la régler, faire une capture avec `s` et lire les coordonnées
+  des coins dans un logiciel de dessin (ex. Paint). À refaire si la caméra bouge.
+
+Rapprocher la caméra de la table aide aussi beaucoup : un coin de carte doit
+faire au moins une vingtaine de pixels de haut dans l'image.
 
 Si le nombre d'images par seconde est trop bas, réexportez le modèle en 416 px
 (sur un PC avec `ultralytics`, à partir du `.pt` d'origine) :

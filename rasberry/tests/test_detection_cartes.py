@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from detection_cartes import (DetecteurCartes, Detection, cartes_uniques, decoder_sortie,
-                              lire_noms, preparer_image)
+from detection_cartes import (DetecteurCartes, Detection, cartes_uniques, decaler_detections,
+                              decoder_sortie, lire_noms, preparer_image, rogner)
 
 
 def test_coins_doubles_comptes_une_fois():
@@ -64,3 +64,28 @@ def test_decoder_sortie_boite_bornee_a_l_image():
     (d,) = decoder_sortie(sortie, ratio=1.0, pad=(0, 0), seuil=0.5,
                           largeur=640, hauteur=480, noms={0: "10C"})
     assert d.boite == (610, 450, 640, 480)
+
+
+def test_rogner_sans_zone_garde_toute_l_image():
+    frame = np.zeros((480, 640, 3), np.uint8)
+    image, decalage = rogner(frame, None)
+    assert image.shape == (480, 640, 3) and decalage == (0, 0)
+
+
+def test_rogner_zone_et_decalage():
+    frame = np.zeros((480, 640, 3), np.uint8)
+    frame[120, 130] = 255
+    image, decalage = rogner(frame, (130, 120, 640, 300))
+    assert image.shape == (180, 510, 3) and decalage == (130, 120)
+    assert image[0, 0, 0] == 255
+
+
+def test_rogner_zone_bornee_a_l_image():
+    frame = np.zeros((480, 640, 3), np.uint8)
+    image, decalage = rogner(frame, (-20, 400, 700, 900))
+    assert image.shape == (80, 640, 3) and decalage == (0, 400)
+
+
+def test_decaler_detections():
+    d = [Detection("AH", 0.9, (10, 20, 30, 40))]
+    assert decaler_detections(d, (130, 120))[0].boite == (140, 140, 160, 160)

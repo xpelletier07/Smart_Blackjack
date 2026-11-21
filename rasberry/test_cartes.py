@@ -23,8 +23,10 @@ from camera import ouvrir_camera
 from detection_cartes import DetecteurCartes, cartes_uniques
 
 
-def dessiner(frame, detections):
-    """Dessine une boîte et le nom de chaque carte détectée."""
+def dessiner(frame, detections, zone):
+    """Dessine la zone de jeu, puis une boîte et le nom de chaque carte détectée."""
+    if zone is not None:
+        cv2.rectangle(frame, zone[:2], zone[2:], (255, 0, 0), 1)
     for d in detections:
         x1, y1, x2, y2 = d.boite
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -49,7 +51,7 @@ def main():
 
             # --- Analyse : cartes ---
             detections = detecteur.detecter(frame)
-            dessiner(frame, detections)
+            dessiner(frame, detections, detecteur.zone)
 
             cartes = cartes_uniques(detections)
             # Comparaison sans l'ordre : deux cartes de confiance proche s'échangent souvent de place
