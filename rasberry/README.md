@@ -104,6 +104,9 @@ Les réglages se trouvent au début de
 - `SEUIL_MOUVEMENT` : sensibilité de la détection de mouvement ;
 - `AIRE_MIN_MOUVEMENT` : taille minimale d'une zone considérée comme un
   mouvement.
+- `INVERSER_ROUGE_BLEU` : à `True` si les objets rouges apparaissent bleus
+  (cas de la webcam USB du projet lue par Picamera2). À mettre à `False` avec
+  la caméra officielle si ce sont les objets bleus qui apparaissent rouges.
 
 Un seuil de mouvement plus bas rend la détection plus sensible. Une aire
 minimale plus élevée réduit les petites détections parasites.

@@ -28,6 +28,7 @@ HAUTEUR = 480
 INDEX_CAMERA_USB = 0          # 0 = première webcam USB
 SEUIL_MOUVEMENT = 25          # sensibilité (plus bas = plus sensible)
 AIRE_MIN_MOUVEMENT = 1500     # taille minimale (en pixels) d'une zone en mouvement
+INVERSER_ROUGE_BLEU = True    # Picamera2 + webcam USB : les rouges sortent bleus sans ça
 # ---------------------------------------------------------------------------
 
 
@@ -63,8 +64,13 @@ class CameraPi:
         self.cam.start()
 
     def lire(self):
-        # Picamera2 "RGB888" donne déjà un ordre compatible avec OpenCV (BGR)
-        return self.cam.capture_array()
+        frame = self.cam.capture_array()
+        # Avec la caméra officielle, "RGB888" donne déjà l'ordre BGR d'OpenCV.
+        # Avec la webcam USB du projet (vue par Picamera2), l'image arrive en RGB :
+        # les cœurs et les carreaux apparaissent bleus. On remet alors en BGR.
+        if INVERSER_ROUGE_BLEU:
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        return frame
 
     def fermer(self):
         self.cam.stop()
