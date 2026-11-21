@@ -9,7 +9,8 @@ le terminal à chaque changement.
 
 Touches :
   q  -> quitter
-  s  -> sauvegarder une capture d'écran (dans le dossier captures/)
+  s  -> sauvegarder une capture (dans le dossier captures/) : l'image annotée,
+        l'image brute de la caméra et la liste des détections (.txt)
 
 Prérequis : le dossier rasberry/modele/cartes_ncnn_model/ (voir rasberry/README.md).
 """
@@ -57,6 +58,8 @@ def main():
                 print("Image non reçue, arrêt.")
                 break
 
+            brute = frame.copy()  # gardée pour les captures (touche s)
+
             # --- Analyse : cartes ---
             detections = detecteur.detecter(frame)
             dessiner(frame, detections, detecteur.zone)
@@ -94,13 +97,17 @@ def main():
             elif touche == ord("s"):
                 dossier_captures = "captures"
                 os.makedirs(dossier_captures, exist_ok=True)
-                nom = os.path.join(
-                    dossier_captures,
-                    datetime.now().strftime("cartes_%Y%m%d_%H%M%S.jpg"),
-                )
-                if not cv2.imwrite(nom, frame):
-                    raise RuntimeError(f"Impossible d'enregistrer la capture : {nom}")
-                print(f"Capture sauvegardée : {nom}")
+                base = os.path.join(dossier_captures,
+                                    datetime.now().strftime("cartes_%Y%m%d_%H%M%S"))
+                for nom, image in ((f"{base}.jpg", frame), (f"{base}_brute.jpg", brute)):
+                    if not cv2.imwrite(nom, image):
+                        raise RuntimeError(f"Impossible d'enregistrer la capture : {nom}")
+                with open(f"{base}.txt", "w", encoding="utf-8") as f:
+                    f.write(f"Joueur : {joueur} = {score_joueur}\n")
+                    f.write(f"Croupier : {croupier} = {score_croupier}\n")
+                    for d in detections:
+                        f.write(f"{d.nom} {d.confiance:.2f} {d.boite}\n")
+                print(f"Capture sauvegardée : {base}.jpg (+ _brute.jpg, .txt)")
 
     finally:
         camera.fermer()
