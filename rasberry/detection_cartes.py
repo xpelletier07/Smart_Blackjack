@@ -31,7 +31,7 @@ NB_THREADS = 4            # le Pi 4 a 4 cœurs
 # (souris, câbles...) est ignoré. None = toute l'image.
 # Pour la trouver : faire une capture (touche s de test_cartes.py) et lire les
 # coordonnées des coins de la zone dans un logiciel de dessin (ex. Paint).
-ZONE_JEU = (130, 120, 640, 300)  # réglée sur le montage du 2026-11-20, à refaire si la caméra bouge
+ZONE_JEU = (160, 0, 480, 480)    # colonne centrale : la moitié de la largeur, toute la hauteur
 # ---------------------------------------------------------------------------
 
 
