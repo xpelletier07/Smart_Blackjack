@@ -189,6 +189,13 @@ nom et sa confiance. Le terminal affiche la liste des cartes vues à chaque
 changement. Une carte dont les deux coins sont visibles n'est comptée qu'une
 fois.
 
+La zone de jeu est coupée par une ligne bleue : les cartes **au-dessus**
+sont au **joueur**, celles **en dessous** au **croupier**. Le score de chaque
+main (as à 11 ou 1, figures à 10) est affiché de part et d'autre de la ligne et
+écrit dans le terminal à chaque changement. On joue avec un seul paquet : une
+carte dont les deux coins sont visibles n'est comptée qu'une fois, du côté du
+milieu de ses deux coins. Le calcul est dans [`scores.py`](./scores.py).
+
 | Touche | Action |
 | --- | --- |
 | `q` | Quitter le programme |
@@ -200,6 +207,8 @@ Au début de [`detection_cartes.py`](./detection_cartes.py) :
 
 - `SEUIL_CONFIANCE` : en dessous, une détection est ignorée (`0.5` par défaut) ;
 - `TAILLE_IMAGE` : doit être la même que celle de l'export (`640` par défaut).
+- `LIGNE_PARTAGE` (dans `scores.py`) : position de la ligne joueur / croupier
+  dans la zone de jeu (`0.5` = au milieu, plus grand = croupier plus petit) ;
 - `ZONE_JEU` : rectangle `(x1, y1, x2, y2)` de l'image où sont posées les
   cartes ; seule cette partie est analysée (`None` = toute l'image). Elle est
   dessinée en bleu dans la fenêtre. **C'est le réglage qui compte le plus** :
