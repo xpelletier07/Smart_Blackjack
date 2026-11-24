@@ -32,7 +32,7 @@ Smart_Blackjack/
 │   └── arduino_smart_BJ.ino    # programme de l'Arduino
 ├── rasberry/
 │   ├── README.md               # guide détaillé du Raspberry Pi
-│   ├── requirements.txt        # dépendances Python (pyserial)
+│   ├── requirements.txt        # dépendances Python du Pi (pyserial, ncnn, mediapipe, aliot)
 │   ├── camera.py               # caméra + détection de mouvement (fenêtre OpenCV)
 │   ├── camera_serveur.py       # caméra diffusée sur une page web
 │   ├── detection_cartes.py     # reconnaissance des cartes (modèle YOLOv8)

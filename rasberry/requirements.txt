@@ -7,3 +7,5 @@ numpy<2
 # Reconnaissance des gestes (doigts levés) : media_pipe/detection_action.py.
 # Même version que media_pipe/requirements.txt (elle a le module mp.solutions.hands).
 mediapipe==0.10.5
+# Connexion à AliveCode (blackjack/blackjack.py)
+aliot-py
