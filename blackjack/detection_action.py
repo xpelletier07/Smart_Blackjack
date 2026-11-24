@@ -10,10 +10,10 @@ hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.75)
 
 # Mapping exact attendu par faireAction() dans l'Arduino
 ACTIONS_BLACKJACK = {
-    0: "Stand",
+    0: "Double",  # poing
     1: "Hit",
-    2: "Double",
-    3: "Split"
+    2: "Split",
+    5: "Stand"    # main ouverte
 }
 
 TEMPS_CONFIRMATION = 1.5
@@ -117,7 +117,7 @@ def lancer_detection(envoyer):
         else:
             dernier_geste = None
             action_deja_envoyee = False
-            cv2.putText(image, "Montrez 0, 1, 2 ou 3 doigts...", (20, 50),
+            cv2.putText(image, "Poing, 1, 2 ou 5 doigts...", (20, 50),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 2)
 
         cv2.putText(image, f"DERNIERE ACTION : {action_validee}", (20, 430),
