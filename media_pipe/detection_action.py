@@ -46,16 +46,16 @@ while cap.isOpened():
         for hand_landmarks, handedness in zip(resultats.multi_hand_landmarks, resultats.multi_handedness):
             mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
             points = hand_landmarks.landmark
-            main_label = handedness.classification.label
+            main_label = handedness.classification[0].label
 
             doigts_leves = 0
 
-            # Pouce
+            # Pouce : bout (4) plus à l'extérieur que l'articulation (3)
             if main_label == "Right":
-                if points.x < points.x:
+                if points[4].x < points[3].x:
                     doigts_leves += 1
             else:
-                if points.x > points.x:
+                if points[4].x > points[3].x:
                     doigts_leves += 1
 
             # 4 autres doigts (Index, Majeur, Annulaire, Auriculaire)

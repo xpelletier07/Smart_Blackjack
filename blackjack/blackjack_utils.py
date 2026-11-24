@@ -2,10 +2,14 @@ import serial
 import time
 import threading
 import math
+import sys
 from dataclasses import dataclass
 
+# Port de l'Arduino : COM5 sur l'ordinateur (Windows), /dev/ttyACM0 sur le Raspberry Pi.
+# Pour lister les ports : python3 -m serial.tools.list_ports
+PORT_SERIE = "COM5" if sys.platform == "win32" else "/dev/ttyACM0"
 
-ser = serial.Serial("COM5", 9600)
+ser = serial.Serial(PORT_SERIE, 9600)
 
 @dataclass
 class Data:
