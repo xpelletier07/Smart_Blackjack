@@ -188,6 +188,31 @@ hostname -I
 Les captures sont enregistrées dans le dossier `captures/` du répertoire
 depuis lequel le script est lancé.
 
+### Flux dans le dashboard AliveCode
+
+Le fichier `alivecode/composant_camera.html` est un composant HTML à coller
+dans le dashboard AliveCode. Comme AliveCode est en HTTPS, le serveur doit
+l'être aussi :
+
+```bash
+python3 rasberry/camera_serveur.py --https
+```
+
+Le serveur ouvre deux ports :
+
+| Port | Contenu |
+| --- | --- |
+| `5000` | page interactive (flux + touches `d`, `s`, `q`) |
+| `5001` | flux vidéo seul, à utiliser dans un `<img src="https://<ip>:5001/">` |
+
+1. Modifier `IP_PI` dans le composant (ex. `10.90.20.169`).
+2. Ouvrir une fois `https://<adresse-ip-du-pi>:5000` **et**
+   `https://<adresse-ip-du-pi>:5001` dans le navigateur et accepter le
+   certificat auto-signé pour chacun.
+3. Coller le contenu du fichier dans le composant HTML du dashboard.
+
+Le poste qui affiche le dashboard doit être sur le même réseau que le Pi.
+
 ### Réglages principaux
 
 Au début de `rasberry/camera.py` : `LARGEUR`, `HAUTEUR`, `INDEX_CAMERA_USB`,

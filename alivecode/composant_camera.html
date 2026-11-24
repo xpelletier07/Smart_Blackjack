@@ -1,0 +1,70 @@
+<!--
+  Composant HTML personnalisé pour le dashboard AliveCode.
+  Affiche en temps réel le flux de rasberry/camera_serveur.py.
+
+  1. Sur le Pi :  python3 rasberry/camera_serveur.py --https
+  2. Remplacer ADRESSE_PI ci-dessous par l'adresse du Pi (hostname -I).
+  3. Ouvrir une fois https://<ip-du-pi>:5000 dans le navigateur et accepter
+     le certificat auto-signé (sinon l'image reste bloquée).
+  4. Coller tout ce fichier dans le composant HTML du dashboard.
+-->
+<div id="cam-bj" style="font-family:sans-serif;color:#ddd;background:#1e1e1e;
+     padding:8px;border-radius:8px;text-align:center;">
+  <img id="cam-bj-video" alt="Flux caméra"
+       style="width:100%;max-width:640px;border:1px solid #444;border-radius:4px;background:#000;">
+  <div style="margin:6px 0;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+    <button data-touche="d" style="padding:4px 10px;cursor:pointer;">Mouvement ON/OFF</button>
+    <button data-touche="s" style="padding:4px 10px;cursor:pointer;">Capture</button>
+    <button id="cam-bj-recharger" style="padding:4px 10px;cursor:pointer;">Reconnecter</button>
+  </div>
+  <div id="cam-bj-statut" style="font-size:0.9em;min-height:1.3em;">Connexion...</div>
+</div>
+
+<script>
+(function () {
+  // ===== À MODIFIER : adresse du Raspberry Pi =====
+  const IP_PI = "10.90.20.169";
+  // ================================================
+  const ADRESSE_PI = "https://" + IP_PI + ":5000";   // commandes (boutons, état)
+  const ADRESSE_FLUX = "https://" + IP_PI + ":5001"; // flux vidéo seul
+
+  const video = document.getElementById("cam-bj-video");
+  const statut = document.getElementById("cam-bj-statut");
+
+  function connecter() {
+    // le paramètre t évite que le navigateur réutilise un flux mort en cache
+    video.src = ADRESSE_FLUX + "/?t=" + Date.now();
+  }
+
+  video.onerror = function () {
+    statut.textContent = "Flux indisponible. Serveur lancé avec --https ? Certificat accepté ?";
+    setTimeout(connecter, 3000);   // nouvelle tentative automatique
+  };
+
+  function afficher(e) {
+    const parts = ["Mouvement : " + (e.mouvement ? "ON" : "OFF"), e.fps + " FPS"];
+    if (e.message) parts.push(e.message);
+    statut.textContent = parts.join("  |  ");
+  }
+
+  async function envoyer(touche) {
+    try {
+      const r = await fetch(ADRESSE_PI + "/touche/" + touche, { method: "POST" });
+      afficher(await r.json());
+    } catch (err) {
+      statut.textContent = "Serveur injoignable.";
+    }
+  }
+
+  document.querySelectorAll("#cam-bj button[data-touche]").forEach(function (b) {
+    b.addEventListener("click", function () { envoyer(b.dataset.touche); });
+  });
+  document.getElementById("cam-bj-recharger").addEventListener("click", connecter);
+
+  setInterval(async function () {
+    try { afficher(await (await fetch(ADRESSE_PI + "/etat")).json()); } catch (e) {}
+  }, 1000);
+
+  connecter();
+})();
+</script>

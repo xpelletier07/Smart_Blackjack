@@ -35,11 +35,21 @@ class CameraUSB:
     """Caméra USB via OpenCV."""
 
     def __init__(self, index=0, largeur=LARGEUR, hauteur=HAUTEUR):
-        self.cap = cv2.VideoCapture(index)
-        if not self.cap.isOpened():
-            raise RuntimeError("Impossible d'ouvrir la webcam USB.")
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, largeur)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, hauteur)
+        # Sur Pi 5, /dev/video0 n'est pas forcément la webcam : on essaie
+        # l'index demandé, puis les suivants, et on garde le premier qui
+        # renvoie une vraie image.
+        for i in [index] + [n for n in range(10) if n != index]:
+            cap = cv2.VideoCapture(i, cv2.CAP_V4L2)
+            if cap.isOpened():
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, largeur)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, hauteur)
+                ok, frame = cap.read()
+                if ok and frame is not None and frame.ndim == 3:
+                    print(f"Webcam USB ouverte sur /dev/video{i}.")
+                    self.cap = cap
+                    return
+            cap.release()
+        raise RuntimeError("Impossible d'ouvrir la webcam USB.")
 
     def lire(self):
         ok, frame = self.cap.read()
@@ -55,7 +65,15 @@ class CameraPi:
     def __init__(self, largeur=LARGEUR, hauteur=HAUTEUR):
         from picamera2 import Picamera2  # import ici : absent si pas de caméra Pi
 
-        self.cam = Picamera2()
+        # libcamera voit aussi les webcams USB, mais Picamera2 les ouvre en
+        # MJPEG (image compressée, couleurs fausses). On ne garde que les
+        # caméras officielles (nappe CSI) ; les webcams passent par OpenCV.
+        cameras_csi = [c for c in Picamera2.global_camera_info()
+                       if "usb" not in c.get("Id", "").lower()]
+        if not cameras_csi:
+            raise RuntimeError("aucune caméra officielle (seulement une webcam USB)")
+
+        self.cam = Picamera2(cameras_csi[0]["Num"])
         config = self.cam.create_preview_configuration(
             main={"size": (largeur, hauteur), "format": "RGB888"}
         )
