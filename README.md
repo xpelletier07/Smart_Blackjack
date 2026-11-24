@@ -41,6 +41,9 @@ Smart_Blackjack/
 │   ├── modele/                 # modèle NCNN pré-entraîné (cartes_ncnn_model/)
 │   ├── moteur.py               # bouton GPIO -> commande série vers l'Arduino
 │   └── interpretation.py       # lecture des messages série de l'Arduino
+├── media_pipe/
+│   ├── configuration.md        # installation sur un ordinateur (Python 3.10)
+│   └── detection_action.py     # actions par doigts levés (0 à 3) avec MediaPipe
 └── README.md
 ```
 

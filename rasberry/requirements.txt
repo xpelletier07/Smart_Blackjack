@@ -4,3 +4,6 @@ ncnn
 # picamera2 et OpenCV (installés par apt) sont compilés pour numpy 1.x :
 # sans cette limite, pip pourrait installer numpy 2 et la caméra Pi ne s'ouvrirait plus.
 numpy<2
+# Reconnaissance des gestes (doigts levés) : media_pipe/detection_action.py.
+# Même version que media_pipe/requirements.txt (elle a le module mp.solutions.hands).
+mediapipe==0.10.5

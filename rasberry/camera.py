@@ -17,6 +17,7 @@ Installation sur le Raspberry Pi :
 """
 
 import os
+import threading
 import time
 from datetime import datetime
 
@@ -101,6 +102,50 @@ class CameraPiLegacy:
 
     def fermer(self):
         self.camera.close()
+
+
+class CameraPartagee:
+    """Une seule caméra pour plusieurs threads (ex. cartes et gestes) : un thread
+    lit la caméra en continu, et chaque lire() donne la prochaine image, la même
+    pour tous les lecteurs. Les images reçues ne doivent pas être modifiées."""
+
+    def __init__(self, camera):
+        self.camera = camera
+        self.condition = threading.Condition()
+        self.image = None
+        self.numero = 0          # numéro de la dernière image lue
+        self.finie = False       # la caméra ne donne plus d'image
+        self.deja_lu = threading.local()
+        threading.Thread(target=self._boucle, daemon=True).start()
+
+    def _boucle(self):
+        try:
+            while not self.finie:
+                image = self.camera.lire()
+                with self.condition:
+                    if image is None:
+                        self.finie = True
+                    else:
+                        self.image = image
+                        self.numero += 1
+                    self.condition.notify_all()
+        finally:
+            self.camera.fermer()
+
+    def lire(self):
+        """Attend une image que ce thread n'a pas encore reçue. None si la caméra s'est arrêtée."""
+        dernier = getattr(self.deja_lu, "numero", 0)
+        with self.condition:
+            self.condition.wait_for(lambda: self.finie or self.numero > dernier)
+            if self.finie:
+                return None
+            self.deja_lu.numero = self.numero
+            return self.image
+
+    def fermer(self):
+        with self.condition:
+            self.finie = True
+            self.condition.notify_all()
 
 
 def ouvrir_camera():

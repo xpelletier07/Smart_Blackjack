@@ -176,6 +176,12 @@ Vérifier que la caméra Pi fonctionne toujours (numpy doit être en version 1.x
 python3 -c "import picamera2, numpy; print('OK, numpy', numpy.__version__)"
 ```
 
+Vérifier que MediaPipe (reconnaissance des doigts) est bien installé :
+
+```bash
+python3 -c "import mediapipe as mp; mp.solutions.hands.Hands(); print('mediapipe', mp.__version__)"
+```
+
 ### 3. Lancer le test
 
 Depuis la racine du dépôt :
@@ -203,13 +209,18 @@ calcul est dans [`scores.py`](./scores.py).
 | `q` | Quitter le programme |
 | `s` | Enregistrer une capture |
 
-### 4. Envoyer les scores à AliveCode
+### 4. Tout lancer : cartes, doigts et AliveCode
 
-[`blackjack/blackjack.py`](../blackjack/blackjack.py) lance la reconnaissance
-des cartes dès que l'objet est connecté (sans fenêtre, avec
-[`suivi_cartes.py`](./suivi_cartes.py)). Quand les cartes changent, les scores
-sont envoyés dans le doc de l'objet : `/doc/score` (joueur) et
-`/doc/dealer_score` (croupier).
+[`blackjack/blackjack.py`](../blackjack/blackjack.py) lance, dès que l'objet est
+connecté et sans fenêtre, deux reconnaissances sur la même caméra
+(`CameraPartagee` dans [`camera.py`](./camera.py)) :
+
+- **les cartes** ([`suivi_cartes.py`](./suivi_cartes.py)) : quand elles
+  changent, les scores sont envoyés dans le doc de l'objet : `/doc/score`
+  (joueur) et `/doc/dealer_score` (croupier) ;
+- **les doigts levés** ([`media_pipe/detection_action.py`](../media_pipe/detection_action.py)) :
+  0 = Stand, 1 = Hit, 2 = Double, 3 = Split. Un geste maintenu 1,5 s est envoyé
+  à l'Arduino (`faire_action`).
 
 ```bash
 python3 blackjack/blackjack.py
