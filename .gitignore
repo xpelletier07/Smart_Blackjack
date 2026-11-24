@@ -1,5 +1,9 @@
 venv_Blackjack/
+venv/
+media_pipe/venv_mediapipe
 __pycache__/
+# Certificat HTTPS du flux web (contient la clé privée)
+blackjack/certificat/
 
 # Logs
 logs

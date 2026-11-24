@@ -1,7 +1,10 @@
 # Documentation: https://alivecode.ca/docs/aliot
 from aliot.aliot_obj import AliotObj
+import os
+import threading
 import time
 import blackjack_utils
+from detection_action import lancer_detection
 
 # Création de l'objet à partir du fichier de configuration
 blackjack = AliotObj("blackjack")
@@ -73,6 +76,12 @@ def send_score(valeur):
 def send_dealer_score(valeur):
     enregistrer_score("dealer_score", valeur)
 
+# Action reconnue par les doigts : envoyée à l'Arduino et à AliveCode
+def envoyer_action(action):
+    print(f"Action reconnue : {action}")
+    blackjack_utils.faire_action(action)
+    blackjack.update_doc({"/doc/action": action})
+
 # Appel de la fonction start une fois que l'objet se connecte au serveur
 blackjack.on_start(callback=start)
 
@@ -89,5 +98,13 @@ blackjack.on_action_recv(action_id="broadcast_lcd", callback=blackjack_utils.bro
 blackjack.on_action_recv(action_id="faire_action", callback=blackjack_utils.faire_action)
 # blackjack.on_action_recv(action_id="afficher_score", callback=blackjack_utils.afficher_score)
 
-# Connection de l'objet au serveur ALIVEcode 
-blackjack.run()
+# Connection de l'objet au serveur ALIVEcode, en arrière-plan
+threading.Thread(target=blackjack.run, daemon=True).start()
+
+# Reconnaissance des doigts dans le programme principal (la fenêtre OpenCV doit y rester).
+# Les actions faites avant la connexion à AliveCode vont seulement à l'Arduino.
+lancer_detection(envoyer_action)
+
+# Touche q dans la fenêtre : on arrête tout (la lecture série de blackjack_utils ne s'arrête pas seule)
+blackjack.stop()
+os._exit(0)
