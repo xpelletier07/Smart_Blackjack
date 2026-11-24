@@ -37,6 +37,7 @@ Smart_Blackjack/
 │   ├── camera_serveur.py       # caméra diffusée sur une page web
 │   ├── detection_cartes.py     # reconnaissance des cartes (modèle YOLOv8)
 │   ├── test_cartes.py          # test de la reconnaissance avec la caméra
+│   ├── suivi_cartes.py         # scores en continu pour blackjack.py (sans fenêtre)
 │   ├── modele/                 # modèle NCNN pré-entraîné (cartes_ncnn_model/)
 │   ├── moteur.py               # bouton GPIO -> commande série vers l'Arduino
 │   └── interpretation.py       # lecture des messages série de l'Arduino

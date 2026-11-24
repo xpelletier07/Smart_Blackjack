@@ -1,23 +1,36 @@
 # Documentation: https://alivecode.ca/docs/aliot
 from aliot.aliot_obj import AliotObj
+import os
+import sys
 import time
 import blackjack_utils
 
+# Reconnaissance des cartes : les scripts sont dans le dossier rasberry/
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "rasberry"))
+from suivi_cartes import SuiviCartes
+
 # Création de l'objet à partir du fichier de configuration
 blackjack = AliotObj("blackjack")
-import blackjack_utils
 
-# Fonction pour démarrer la boucle principale   
+# Fonction pour démarrer la boucle principale
 def start():
     # Dernières données envoyées, pour éviter de mettre à jour le doc inutilement
     previous_doc = None
+
+    # La caméra est lue en continu dans un thread ; on récupère ses scores à chaque tour
+    cartes = SuiviCartes()
+    cartes.demarrer()
 
     while True:
         try:
             # Récupération des données les plus récentes
             latest_data = blackjack_utils.get_latest_data()
+            score_joueur, score_croupier = cartes.scores
 
             new_doc = {
+                # Scores calculés à partir des cartes vues par la caméra
+                "/doc/score" : score_joueur,
+                "/doc/dealer_score" : score_croupier,
                 "/doc/action" : latest_data.action if latest_data else None,
                 "/doc/moteur" : latest_data.moteur if latest_data else None,
                 "/doc/nombre_tours" : latest_data.nombre_tours if latest_data else None,

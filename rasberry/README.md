@@ -203,6 +203,21 @@ calcul est dans [`scores.py`](./scores.py).
 | `q` | Quitter le programme |
 | `s` | Enregistrer une capture |
 
+### 4. Envoyer les scores à AliveCode
+
+[`blackjack/blackjack.py`](../blackjack/blackjack.py) lance la reconnaissance
+des cartes dès que l'objet est connecté (sans fenêtre, avec
+[`suivi_cartes.py`](./suivi_cartes.py)). Quand les cartes changent, les scores
+sont envoyés dans le doc de l'objet : `/doc/score` (joueur) et
+`/doc/dealer_score` (croupier).
+
+```bash
+python3 blackjack/blackjack.py
+```
+
+Une seule application peut utiliser la caméra à la fois : fermer
+`test_cartes.py` avant de lancer `blackjack.py`.
+
 ### Réglages
 
 Au début de [`detection_cartes.py`](./detection_cartes.py) :
