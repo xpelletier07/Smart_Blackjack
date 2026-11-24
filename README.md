@@ -191,18 +191,20 @@ depuis lequel le script est lancé.
 ### Flux dans le dashboard AliveCode
 
 Le fichier `alivecode/composant_camera.html` est un composant HTML à coller
-dans le dashboard AliveCode. Comme AliveCode est en HTTPS, le serveur doit
-l'être aussi :
+dans le dashboard AliveCode. Il affiche la caméra **MediaPipe** (gestes),
+diffusée par `blackjack/flux_web.py` dès que `blackjack.py` (ou
+`detection_action.py`) est lancé. Comme AliveCode est en HTTPS, le flux
+l'est aussi ; il faut donc, dans le venv MediaPipe :
 
 ```bash
-python3 rasberry/camera_serveur.py --https
+pip install flask cryptography
 ```
 
-Le serveur ouvre deux ports :
+Le flux ouvre deux ports :
 
 | Port | Contenu |
 | --- | --- |
-| `5000` | page interactive (flux + touches `d`, `s`, `q`) |
+| `5000` | page interactive (flux + touches `s` capture, `q` quitter) |
 | `5001` | flux vidéo seul, à utiliser dans un `<img src="https://<ip>:5001/">` |
 
 1. Modifier `IP_PI` dans le composant (ex. `10.90.20.169`).

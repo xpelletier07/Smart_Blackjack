@@ -2,6 +2,7 @@ import math
 import time
 import cv2
 import mediapipe as mp
+import flux_web  # diffusion web : port 5000 (page) et 5001 (flux seul)
 
 # Initialisation MediaPipe
 mp_hands = mp.solutions.hands
@@ -66,6 +67,7 @@ def lancer_detection(envoyer):
     fin_pause = 0
 
     cap = cv2.VideoCapture(0)
+    flux_web.demarrer()
 
     while cap.isOpened():
         succes, image = cap.read()
@@ -124,8 +126,9 @@ def lancer_detection(envoyer):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 3)
 
         cv2.imshow("Smart Blackjack - Camera", image)
+        flux_web.publier(image, action_validee)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q') or flux_web.arret.is_set():
             break
 
     cap.release()
