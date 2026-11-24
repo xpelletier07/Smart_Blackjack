@@ -200,18 +200,34 @@ l'est aussi ; il faut donc, dans le venv MediaPipe :
 pip install flask cryptography
 ```
 
-Le flux ouvre deux ports :
+Tout passe par le port `5000` :
 
-| Port | Contenu |
+| Adresse | Contenu |
 | --- | --- |
-| `5000` | page interactive (flux + touches `s` capture, `q` quitter) |
-| `5001` | flux vidéo seul, à utiliser dans un `<img src="https://<ip>:5001/">` |
+| `https://<ip>:5000/` | page interactive (flux + touches `s` capture, `q` quitter) |
+| `https://<ip>:5000/flux` | flux vidéo seul, pour un `<img src="https://<ip>:5000/flux">` |
+| `https://<ip>:5000/certificat.crt` | certificat à installer sur le poste |
 
 1. Modifier `IP_PI` dans le composant (ex. `10.90.20.169`).
-2. Ouvrir une fois `https://<adresse-ip-du-pi>:5000` **et**
-   `https://<adresse-ip-du-pi>:5001` dans le navigateur et accepter le
-   certificat auto-signé pour chacun.
+2. Installer le certificat **une seule fois** sur le poste (voir ci-dessous).
 3. Coller le contenu du fichier dans le composant HTML du dashboard.
+
+#### Installer le certificat (plus d'avertissement « non sécurisé »)
+
+Le certificat est créé au premier lancement dans `blackjack/certificat/`
+(ignoré par git) puis réutilisé. Pour que le navigateur lui fasse
+confiance sans rien demander, sur le poste Windows :
+
+1. Ouvrir `https://<ip>:5000/certificat.crt` (accepter l'avertissement une
+   dernière fois) pour télécharger `smart_blackjack.crt`.
+2. Double-cliquer le fichier → **Installer le certificat…** →
+   **Utilisateur actuel** → **Placer tous les certificats dans le magasin
+   suivant** → **Autorités de certification racines de confiance** →
+   Terminer, puis accepter l'avertissement de sécurité de Windows.
+3. Fermer et rouvrir Edge/Chrome.
+
+Si l'adresse IP du Pi change, le certificat est recréé (message dans le
+terminal) et il faut le réinstaller.
 
 Le poste qui affiche le dashboard doit être sur le même réseau que le Pi.
 

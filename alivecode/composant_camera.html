@@ -6,8 +6,9 @@
   1. Lancer blackjack.py (ou detection_action.py) ; le venv doit avoir
      flask et cryptography (pip install flask cryptography).
   2. Remplacer IP_PI ci-dessous par l'adresse de la machine (hostname -I).
-  3. Ouvrir une fois https://<ip>:5000 ET https://<ip>:5001 dans le
-     navigateur et accepter le certificat auto-signé de chacun.
+  3. Installer une fois le certificat sur le poste (voir README :
+     https://<ip>:5000/certificat.crt), sinon accepter l'avertissement
+     en ouvrant https://<ip>:5000 dans le navigateur.
   4. Coller tout ce fichier dans le composant HTML du dashboard.
 -->
 <div id="cam-bj" style="font-family:sans-serif;color:#ddd;background:#1e1e1e;
@@ -27,14 +28,14 @@
   const IP_PI = "10.90.20.169";
   // ==================================================================
   const ADRESSE_PI = "https://" + IP_PI + ":5000";   // commandes (capture, état)
-  const ADRESSE_FLUX = "https://" + IP_PI + ":5001"; // flux vidéo seul
+  const ADRESSE_FLUX = ADRESSE_PI + "/flux";          // flux vidéo seul
 
   const video = document.getElementById("cam-bj-video");
   const statut = document.getElementById("cam-bj-statut");
 
   function connecter() {
     // le paramètre t évite que le navigateur réutilise un flux mort en cache
-    video.src = ADRESSE_FLUX + "/?t=" + Date.now();
+    video.src = ADRESSE_FLUX + "?t=" + Date.now();
   }
 
   video.onerror = function () {

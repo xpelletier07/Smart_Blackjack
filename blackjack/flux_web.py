@@ -1,9 +1,10 @@
 """
 flux_web.py - Diffuse sur le réseau l'image annotée de la caméra MediaPipe.
 
-Même logique que rasberry/camera_serveur.py :
-  port 5000 -> page interactive (flux + boutons s = capture, q = quitter)
-  port 5001 -> flux vidéo seul, pour <img src="https://<ip>:5001/"> (AliveCode)
+Port 5000 :
+  /                -> page interactive (flux + boutons s = capture, q = quitter)
+  /flux            -> flux vidéo seul, pour <img src="https://<ip>:5000/flux"> (AliveCode)
+  /certificat.crt  -> certificat à installer sur le poste (plus d'avertissement)
 
 Utilisation (voir detection_action.py) :
   flux_web.demarrer()                 # une fois, avant la boucle
@@ -13,22 +14,30 @@ Utilisation (voir detection_action.py) :
 HTTPS (requis par le dashboard AliveCode) : actif si le paquet
 `cryptography` est installé, sinon le serveur démarre en HTTP.
   pip install flask cryptography
+Le certificat est créé une seule fois dans blackjack/certificat/ puis
+réutilisé ; il n'est recréé que si l'adresse IP de la machine change.
 """
 
+import datetime as dt
+import ipaddress
 import os
+import socket
+import subprocess
 import threading
 import time
 from datetime import datetime
 
 import cv2
-from flask import Flask, Response, abort, jsonify, request, send_from_directory
+from flask import Flask, Response, abort, jsonify, request, send_file, send_from_directory
 from werkzeug.serving import make_server
 
 HOTE = "0.0.0.0"
-PORT = 5000        # page interactive
-PORT_FLUX = 5001   # flux vidéo seul
+PORT = 5000
 QUALITE_JPEG = 80
 DOSSIER_CAPTURES = "captures"
+DOSSIER_CERTIFICAT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certificat")
+FICHIER_CERT = os.path.join(DOSSIER_CERTIFICAT, "flux_web.crt")
+FICHIER_CLE = os.path.join(DOSSIER_CERTIFICAT, "flux_web.key")
 
 verrou = threading.Lock()
 etat = {"action": "Aucune", "fps": 0.0, "message": ""}
@@ -168,18 +177,16 @@ def telecharger_capture(nom):
     return send_from_directory(os.path.abspath(DOSSIER_CAPTURES), nom)
 
 
-# ---- Port 5001 : flux vidéo seul ----
-app_flux = Flask("flux_web_seul")
-
-
-@app_flux.route("/")
-@app_flux.route("/flux")
-def flux_seul():
-    return reponse_flux()
+@app.route("/certificat.crt")
+def telecharger_certificat():
+    """Certificat public (sans la clé) à installer sur le poste."""
+    if not os.path.exists(FICHIER_CERT):
+        abort(404)
+    return send_file(FICHIER_CERT, mimetype="application/x-x509-ca-cert",
+                     as_attachment=True, download_name="smart_blackjack.crt")
 
 
 @app.after_request
-@app_flux.after_request
 def autoriser_dashboard(reponse):
     """Autorise le dashboard AliveCode à appeler le serveur."""
     reponse.headers["Access-Control-Allow-Origin"] = "*"
@@ -189,21 +196,92 @@ def autoriser_dashboard(reponse):
     return reponse
 
 
+# ---- Certificat HTTPS persistant ----
+def adresses_ip():
+    """Adresses IPv4 de la machine (hors 127.x), ex. ['10.90.20.169']."""
+    ips = set()
+    try:  # Linux / Raspberry Pi
+        sortie = subprocess.run(["hostname", "-I"], capture_output=True, text=True, timeout=2)
+        ips.update(ip for ip in sortie.stdout.split() if "." in ip)
+    except Exception:
+        pass
+    try:  # IP utilisée pour sortir sur le réseau (aucun paquet n'est envoyé)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("10.255.255.255", 1))
+            ips.add(s.getsockname()[0])
+    except Exception:
+        pass
+    return sorted(ip for ip in ips if not ip.startswith("127."))
+
+
+def ips_du_certificat():
+    """IP inscrites dans le certificat existant (vide s'il n'existe pas)."""
+    from cryptography import x509
+    try:
+        with open(FICHIER_CERT, "rb") as f:
+            cert = x509.load_pem_x509_certificate(f.read())
+        san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
+        return {str(ip) for ip in san.get_values_for_type(x509.IPAddress)}
+    except Exception:
+        return set()
+
+
+def preparer_certificat():
+    """Crée le certificat une seule fois ; le recrée seulement si l'IP a changé."""
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+
+    ips = adresses_ip()
+    if os.path.exists(FICHIER_CLE) and set(ips) <= ips_du_certificat():
+        return FICHIER_CERT, FICHIER_CLE
+
+    print(f"Création du certificat HTTPS pour {', '.join(ips) or 'localhost'} "
+          "(à réinstaller sur le poste : /certificat.crt)")
+    os.makedirs(DOSSIER_CERTIFICAT, exist_ok=True)
+    cle = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    nom = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Smart Blackjack")])
+    hote = socket.gethostname()
+    noms = [x509.DNSName("localhost"), x509.DNSName(hote), x509.DNSName(hote + ".local"),
+            x509.IPAddress(ipaddress.ip_address("127.0.0.1"))]
+    noms += [x509.IPAddress(ipaddress.ip_address(ip)) for ip in ips]
+    maintenant = dt.datetime.now(dt.timezone.utc)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(nom).issuer_name(nom)
+        .public_key(cle.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(maintenant - dt.timedelta(days=1))
+        .not_valid_after(maintenant + dt.timedelta(days=825))
+        .add_extension(x509.SubjectAlternativeName(noms), critical=False)
+        .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+        .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), critical=False)
+        .sign(cle, hashes.SHA256())
+    )
+    with open(FICHIER_CLE, "wb") as f:
+        f.write(cle.private_bytes(serialization.Encoding.PEM,
+                                  serialization.PrivateFormat.TraditionalOpenSSL,
+                                  serialization.NoEncryption()))
+    with open(FICHIER_CERT, "wb") as f:
+        f.write(cert.public_bytes(serialization.Encoding.PEM))
+    return FICHIER_CERT, FICHIER_CLE
+
+
 def demarrer(https=True):
-    """Lance les deux serveurs en arrière-plan (ne bloque pas)."""
+    """Lance le serveur (port 5000) en arrière-plan (ne bloque pas)."""
     ssl = None
     if https:
         try:
-            import cryptography  # noqa: F401  requis pour le certificat auto-signé
-            ssl = "adhoc"
+            ssl = preparer_certificat()
         except ImportError:
             print("Paquet 'cryptography' absent : flux web en HTTP "
                   "(bloqué par AliveCode). pip install cryptography")
     schema = "https" if ssl else "http"
 
-    for application, port in ((app, PORT), (app_flux, PORT_FLUX)):
-        serveur = make_server(HOTE, port, application, threaded=True, ssl_context=ssl)
-        threading.Thread(target=serveur.serve_forever, daemon=True).start()
+    serveur = make_server(HOTE, PORT, app, threaded=True, ssl_context=ssl)
+    threading.Thread(target=serveur.serve_forever, daemon=True).start()
 
-    print(f"Page interactive : {schema}://<adresse-ip>:{PORT}")
-    print(f"Flux seul        : {schema}://<adresse-ip>:{PORT_FLUX}")
+    for ip in adresses_ip() or ["<adresse-ip>"]:
+        print(f"Page interactive : {schema}://{ip}:{PORT}")
+        print(f"Flux seul        : {schema}://{ip}:{PORT}/flux")
