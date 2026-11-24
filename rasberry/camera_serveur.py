@@ -19,18 +19,21 @@ Lancement (depuis la racine du dépôt) :
   python3 rasberry/camera_server.py
 """
 
+import argparse
 import os
 import threading
 import time
 from datetime import datetime
 
 import cv2
-from flask import Flask, Response, abort, jsonify, send_from_directory
+from flask import Flask, Response, abort, jsonify, request, send_from_directory
+from werkzeug.serving import make_server
 
 from camera import detecter_mouvement, ouvrir_camera
 
 HOTE = "0.0.0.0"   # écoute sur toutes les interfaces du Pi
-PORT = 5000
+PORT = 5000        # page web interactive (flux + boutons d, s, q)
+PORT_FLUX = 5001   # flux vidéo seul, pour <img src="https://<ip>:5001/">  (AliveCode)
 QUALITE_JPEG = 80
 DOSSIER_CAPTURES = "captures"
 
@@ -102,6 +105,12 @@ def boucle_camera():
                 with verrou:
                     dernier_jpeg = jpeg.tobytes()
                     etat["fps"] = round(fps, 1)
+    except Exception as e:
+        # sans ce message, le serveur reste ouvert mais le flux ne vient jamais
+        print(f"ERREUR caméra, plus d'images envoyées : {e!r}")
+        with verrou:
+            etat["message"] = f"Erreur caméra : {e}"
+        raise
     finally:
         camera.fermer()
 
@@ -180,6 +189,28 @@ setInterval(async () => {
 """
 
 
+# Deuxième serveur (port 5001) : uniquement le flux vidéo, sans page ni commandes.
+app_flux = Flask("camera_flux")
+
+
+@app_flux.route("/")
+@app_flux.route("/flux")
+def flux_seul():
+    return Response(generer_flux(), mimetype="multipart/x-mixed-replace; boundary=image")
+
+
+@app.after_request
+@app_flux.after_request
+def autoriser_dashboard(reponse):
+    """Autorise le composant HTML du dashboard AliveCode à appeler le serveur."""
+    reponse.headers["Access-Control-Allow-Origin"] = "*"
+    reponse.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    reponse.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    # Chrome : accès d'un site public (alivecode.ca) vers une IP du réseau local
+    reponse.headers["Access-Control-Allow-Private-Network"] = "true"
+    return reponse
+
+
 @app.route("/")
 def index():
     return PAGE
@@ -196,9 +227,11 @@ def lire_etat():
         return jsonify(etat)
 
 
-@app.route("/touche/<touche>", methods=["POST"])
+@app.route("/touche/<touche>", methods=["POST", "OPTIONS"])
 def appuyer_touche(touche):
     global demande_capture
+    if request.method == "OPTIONS":   # pré-vérification CORS du navigateur
+        return "", 204
     with verrou:
         etat["message"] = ""
         if touche == "d":
@@ -222,6 +255,21 @@ def telecharger_capture(nom):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Diffuse la caméra du Raspberry Pi.")
+    parser.add_argument(
+        "--https", action="store_true",
+        help="sert en HTTPS (certificat auto-signé), requis pour le dashboard AliveCode",
+    )
+    args = parser.parse_args()
+
+    ssl = "adhoc" if args.https else None
+    schema = "https" if args.https else "http"
+
     threading.Thread(target=boucle_camera, daemon=True).start()
-    print(f"Serveur démarré : http://<adresse-ip-du-pi>:{PORT}")
-    app.run(host=HOTE, port=PORT, threaded=True)
+
+    serveur_flux = make_server(HOTE, PORT_FLUX, app_flux, threaded=True, ssl_context=ssl)
+    threading.Thread(target=serveur_flux.serve_forever, daemon=True).start()
+
+    print(f"Page interactive : {schema}://<adresse-ip-du-pi>:{PORT}")
+    print(f"Flux seul        : {schema}://<adresse-ip-du-pi>:{PORT_FLUX}")
+    app.run(host=HOTE, port=PORT, threaded=True, ssl_context=ssl)
