@@ -1,5 +1,6 @@
 import sys
 import os
+import math
 import time
 import cv2
 import mediapipe as mp
@@ -24,10 +25,49 @@ ACTIONS_BLACKJACK = {
 }
 
 TEMPS_CONFIRMATION = 1.5
+
+# Pause (en secondes) après une action, le temps que l'Arduino distribue les cartes :
+# le moteur tourne à 15 tr/min, donc 4 s par carte, + 2 s d'affichage sur l'Arduino
+DELAI_APRES_ACTION = {
+    "Stand": 2,
+    "Hit": 6,     # 1 carte
+    "Double": 6,  # 1 carte
+    "Split": 10   # 2 cartes
+}
+
+# Un doigt est levé si son bout est plus loin du poignet que son articulation du milieu.
+# Plus haut = il faut tendre le doigt davantage pour qu'il compte.
+SEUIL_DOIGT = 1.1
+# Le pouce est levé si son bout est plus loin de la base de l'auriculaire que son articulation
+SEUIL_POUCE = 1.1
+
 dernier_geste = None
 debut_geste = 0
 action_deja_envoyee = False
 action_validee = "Aucune"
+fin_pause = 0
+
+
+def compter_doigts(points, largeur, hauteur):
+    """Nombre de doigts levés. On compare des distances plutôt que des hauteurs (y),
+    pour que le comptage marche même si la main est penchée ou tournée."""
+    def distance(a, b):
+        # x et y vont de 0 à 1 : on les remet en pixels pour ne pas déformer les distances
+        return math.hypot((points[a].x - points[b].x) * largeur, (points[a].y - points[b].y) * hauteur)
+
+    doigts_leves = 0
+
+    # Pouce : replié, son bout (4) revient vers la base de l'auriculaire (17)
+    if distance(4, 17) > distance(3, 17) * SEUIL_POUCE:
+        doigts_leves += 1
+
+    # 4 autres doigts (Index, Majeur, Annulaire, Auriculaire) : bout comparé à l'articulation
+    # du milieu (bout - 2), par rapport au poignet (0)
+    for bout in [8, 12, 16, 20]:
+        if distance(bout, 0) > distance(bout - 2, 0) * SEUIL_DOIGT:
+            doigts_leves += 1
+
+    return doigts_leves
 
 cap = cv2.VideoCapture(0)
 
@@ -41,32 +81,27 @@ while cap.isOpened():
     resultats = hands.process(image_rgb)
 
     action_detectee = None
+    hauteur, largeur = image.shape[:2]
 
-    if resultats.multi_hand_landmarks and resultats.multi_handedness:
-        for hand_landmarks, handedness in zip(resultats.multi_hand_landmarks, resultats.multi_handedness):
+    if resultats.multi_hand_landmarks:
+        for hand_landmarks in resultats.multi_hand_landmarks:
             mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-            points = hand_landmarks.landmark
-            main_label = handedness.classification[0].label
-
-            doigts_leves = 0
-
-            # Pouce : bout (4) plus à l'extérieur que l'articulation (3)
-            if main_label == "Right":
-                if points[4].x < points[3].x:
-                    doigts_leves += 1
-            else:
-                if points[4].x > points[3].x:
-                    doigts_leves += 1
-
-            # 4 autres doigts (Index, Majeur, Annulaire, Auriculaire)
-            for bout in [8, 12, 16, 20]:
-                if points[bout].y < points[bout - 2].y:
-                    doigts_leves += 1
-
+            doigts_leves = compter_doigts(hand_landmarks.landmark, largeur, hauteur)
             action_detectee = ACTIONS_BLACKJACK.get(doigts_leves, None)
 
+            # Pour vérifier le comptage à l'écran
+            cv2.putText(image, f"Doigts : {doigts_leves}", (20, 90),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+
+    # Pause pendant la distribution des cartes : on ignore les gestes
+    if time.time() < fin_pause:
+        dernier_geste = None
+        action_deja_envoyee = False
+        cv2.putText(image, f"Distribution... {fin_pause - time.time():.0f} s", (20, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+
     # Validation et appel de faire_action()
-    if action_detectee:
+    elif action_detectee:
         if action_detectee == dernier_geste:
             temps_ecoule = time.time() - debut_geste
             progression = min(int((temps_ecoule / TEMPS_CONFIRMATION) * 100), 100)
@@ -76,8 +111,9 @@ while cap.isOpened():
 
             if temps_ecoule >= TEMPS_CONFIRMATION and not action_deja_envoyee:
                 action_validee = action_detectee
-                faire_action(action_validee) 
+                faire_action(action_validee)
                 action_deja_envoyee = True
+                fin_pause = time.time() + DELAI_APRES_ACTION[action_validee]
         else:
             dernier_geste = action_detectee
             debut_geste = time.time()
