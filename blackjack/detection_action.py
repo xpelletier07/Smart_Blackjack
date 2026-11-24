@@ -1,4 +1,6 @@
 import math
+import os
+import sys
 import time
 import cv2
 import mediapipe as mp
@@ -18,6 +20,9 @@ ACTIONS_BLACKJACK = {
 }
 
 TEMPS_CONFIRMATION = 1.5
+
+# En SSH il n'y a pas d'écran : pas de fenêtre OpenCV, seulement le flux web (5000/5001)
+FENETRE = sys.platform == "win32" or bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
 
 # Pause (en secondes) après une action, le temps que l'Arduino distribue les cartes :
 # le moteur tourne à 15 tr/min, donc 4 s par carte, + 2 s d'affichage sur l'Arduino
@@ -125,14 +130,18 @@ def lancer_detection(envoyer):
         cv2.putText(image, f"DERNIERE ACTION : {action_validee}", (20, 430),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 3)
 
-        cv2.imshow("Smart Blackjack - Camera", image)
         flux_web.publier(image, action_validee)
 
-        if cv2.waitKey(1) & 0xFF == ord('q') or flux_web.arret.is_set():
+        if FENETRE:
+            cv2.imshow("Smart Blackjack - Camera", image)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        if flux_web.arret.is_set():
             break
 
     cap.release()
-    cv2.destroyAllWindows()
+    if FENETRE:
+        cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
